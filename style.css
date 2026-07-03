@@ -808,6 +808,25 @@ textarea { resize: vertical; min-height: 130px; }
   display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
   font-size: 0.86rem; color: var(--green-200);
 }
+.footer-links { display: flex; gap: 18px; flex-wrap: wrap; }
+.footer-links a { color: var(--green-200); font-size: 0.86rem; padding: 0; display: inline; }
+.footer-links a:hover { color: var(--white); }
+.footer-disclaimer {
+  margin: 18px 0 0;
+  font-size: 0.78rem;
+  line-height: 1.5;
+  color: var(--green-200);
+  opacity: 0.75;
+  max-width: 780px;
+}
+
+/* ---------- Legal pages ---------- */
+.legal-meta {
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-weight: 500;
+  margin-bottom: 2em;
+}
 
 /* ---------- Utility ---------- */
 .mt-0 { margin-top: 0; }

@@ -17,3 +17,9 @@ Founder and coach: Marliis Schneider - a former professional rower (national tea
 - [Inflammation](learn-inflammation.html): How seed oils drive chronic inflammation, and what to eat instead.
 - [Protein](learn-protein.html): How much you actually need and where to get it.
 - [Bloating](learn-bloating.html): Reading the signal instead of cutting more foods.
+- [Eating Out & Travel](learn-eatingout.html): A playbook for restaurants, airports, hotels, and client dinners.
+- [Movement](learn-movement.html): Why a 10-minute walk after meals beats the gym for blood sugar.
+
+## Legal
+- [Privacy Policy](privacy.html)
+- [Terms of Service](terms.html): Includes payment, cancellation/refund terms, and a medical disclaimer.
