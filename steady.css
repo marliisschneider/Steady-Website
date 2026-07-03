@@ -598,8 +598,9 @@ textarea { resize: vertical; min-height: 130px; }
 }
 .gallery img {
   width: 100%;
-  aspect-ratio: 1 / 1;
+  height: 250px;
   object-fit: cover;
+  object-position: center;
   border-radius: 14px;
   display: block;
   box-shadow: var(--shadow-sm);
@@ -879,6 +880,7 @@ textarea { resize: vertical; min-height: 130px; }
   .coach-band { grid-template-columns: 1fr; gap: 28px; text-align: center; }
   .coach-band .btn { margin-top: 4px; }
   .gallery { grid-template-columns: repeat(3, 1fr); }
+  .gallery img { height: 220px; }
   .stats { grid-template-columns: 1fr 1fr; }
 }
 
@@ -905,6 +907,7 @@ textarea { resize: vertical; min-height: 130px; }
   .fit-grid { grid-template-columns: 1fr; }
   .guide-cols { grid-template-columns: 1fr; }
   .gallery { grid-template-columns: repeat(2, 1fr); }
+  .gallery img { height: 180px; }
   .feature-card { grid-template-columns: 1fr; }
   .feature-side { flex-direction: row; align-items: center; gap: 16px; }
   .stats { grid-template-columns: 1fr; gap: 30px; }
