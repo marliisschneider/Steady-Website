@@ -587,6 +587,34 @@ textarea { resize: vertical; min-height: 130px; }
 .coach-band .coach-photo { position: static; max-width: 320px; margin: 0 auto; }
 .coach-band h2 { margin-top: 0; }
 .coach-band .btn { margin-top: 10px; }
+
+/* ---------- Photo gallery ---------- */
+.gallery {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 14px;
+}
+.gallery img {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  object-fit: cover;
+  border-radius: 14px;
+  display: block;
+  box-shadow: var(--shadow-sm);
+}
+.story-figure { margin: 2.2em 0 0; }
+.story-figure img {
+  width: 100%;
+  border-radius: 16px;
+  box-shadow: var(--shadow);
+  display: block;
+}
+.story-figure figcaption {
+  font-size: 0.88rem;
+  color: var(--muted);
+  margin-top: 10px;
+  text-align: center;
+}
 .credentials { list-style: none; padding: 0; margin: 1.5em 0; display: grid; gap: 12px; }
 .credentials li { padding-left: 30px; position: relative; color: var(--ink-soft); }
 .credentials li::before {
@@ -845,6 +873,7 @@ textarea { resize: vertical; min-height: 130px; }
   .coach-photo { position: static; max-width: 300px; }
   .coach-band { grid-template-columns: 1fr; gap: 28px; text-align: center; }
   .coach-band .btn { margin-top: 4px; }
+  .gallery { grid-template-columns: repeat(3, 1fr); }
   .stats { grid-template-columns: 1fr 1fr; }
 }
 
@@ -870,6 +899,7 @@ textarea { resize: vertical; min-height: 130px; }
   .steps { grid-template-columns: 1fr; }
   .fit-grid { grid-template-columns: 1fr; }
   .guide-cols { grid-template-columns: 1fr; }
+  .gallery { grid-template-columns: repeat(2, 1fr); }
   .feature-card { grid-template-columns: 1fr; }
   .feature-side { flex-direction: row; align-items: center; gap: 16px; }
   .stats { grid-template-columns: 1fr; gap: 30px; }
