@@ -653,6 +653,25 @@ textarea { resize: vertical; min-height: 130px; }
 }
 .program h3 { margin-bottom: 0.2em; }
 .program-sub { color: var(--ink-soft); font-family: var(--serif); font-size: 1.05rem; margin-bottom: 18px; }
+.program-price {
+  font-family: var(--serif);
+  font-size: 2.4rem;
+  font-weight: 550;
+  color: var(--green-900);
+  line-height: 1;
+  margin: 0 0 20px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.program-price span {
+  display: block;
+  font-family: var(--sans);
+  font-size: 0.86rem;
+  font-weight: 500;
+  color: var(--muted);
+  margin-top: 8px;
+  line-height: 1.4;
+}
 .program .credentials { margin: 0 0 22px; font-size: 0.96rem; }
 .program .credentials li { padding-left: 28px; }
 .program-meta {
