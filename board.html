@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steady Tasks — Board</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,380;9..144,450;9..144,550;9..144,600&family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="steady.css">
+  <meta name="theme-color" content="#14352a">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    /* Kanban — page-specific styles */
+    .board {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 22px;
+      align-items: start;
+    }
+    .col {
+      background: var(--cream-dark);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 16px;
+      min-height: 220px;
+    }
+    .col-head {
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      margin-bottom: 14px;
+      padding: 0 4px;
+    }
+    .col-head h2 {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      font-weight: 650;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--green-800);
+      margin: 0;
+    }
+    .col-count {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--muted);
+      background: var(--offwhite);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 1px 10px;
+    }
+    .col.is-done .col-head h2 { color: var(--green-400); }
+    .cards { display: flex; flex-direction: column; gap: 12px; }
+    .card {
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--green-500);
+      border-radius: 10px;
+      padding: 14px 16px;
+      cursor: pointer;
+      text-align: left;
+      width: 100%;
+      font: inherit;
+      transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+    }
+    .card:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 18px rgba(16, 40, 30, 0.10);
+    }
+    .card:focus-visible { outline: 2px solid var(--green-500); outline-offset: 2px; }
+    .card.is-moving { opacity: 0.45; pointer-events: none; }
+    .card h3 {
+      font-family: var(--serif);
+      font-size: 1.08rem;
+      font-weight: 550;
+      color: var(--green-900);
+      margin: 0 0 4px;
+      line-height: 1.3;
+    }
+    .card p {
+      font-family: var(--sans);
+      font-size: 0.88rem;
+      color: var(--muted);
+      margin: 0;
+      line-height: 1.5;
+    }
+    .col.is-done .card { border-left-color: var(--green-200); }
+    .col.is-done .card h3 { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
+    .col-empty {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px 8px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
+    }
+    .board-hint {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      color: var(--muted);
+      margin-top: 18px;
+      text-align: center;
+    }
+    @media (max-width: 860px) {
+      .board { grid-template-columns: 1fr; }
+      .col { min-height: 0; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="brand"><span class="dot"></span>Steady</a>
+      <button class="nav-toggle" aria-label="Menu" onclick="document.getElementById('navlinks').classList.toggle('open')">☰</button>
+      <div class="nav-links" id="navlinks">
+        <a href="index.html">Home</a>
+        <a href="coaching.html">Coaching</a>
+        <a href="learn.html">Learn</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="about.html">About</a>
+        <a href="contact.html" class="cta">Book a call</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="article-hero">
+    <div class="wrap narrow">
+      <p class="eyebrow">Admin</p>
+      <h1>Steady Tasks</h1>
+      <p class="lede" id="board-status">Loading tasks…</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="board" id="board" hidden>
+        <div class="col" data-status="todo">
+          <div class="col-head"><h2>To Do</h2><span class="col-count">0</span></div>
+          <div class="cards"></div>
+        </div>
+        <div class="col" data-status="in_progress">
+          <div class="col-head"><h2>In Progress</h2><span class="col-count">0</span></div>
+          <div class="cards"></div>
+        </div>
+        <div class="col is-done" data-status="done">
+          <div class="col-head"><h2>Done</h2><span class="col-count">0</span></div>
+          <div class="cards"></div>
+        </div>
+      </div>
+      <p class="board-hint" id="board-hint" hidden>Click a card to move it to the next column. Clicking a done card sends it back to To&nbsp;Do.</p>
+      <p class="form-msg" id="board-msg" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-bottom">
+        <span>© 2026 Steady Nutrition Coaching</span>
+        <span>Internal board — not linked from the public site.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      var NEXT = { todo: "in_progress", in_progress: "done", done: "todo" };
+      var statusEl = document.getElementById("board-status");
+      var boardEl = document.getElementById("board");
+      var hintEl = document.getElementById("board-hint");
+      var msgEl = document.getElementById("board-msg");
+
+      function setMsg(text, kind) {
+        msgEl.textContent = text;
+        msgEl.className = "form-msg " + (kind || "");
+      }
+
+      var client = null;
+      try {
+        client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      } catch (e) {
+        console.error("Steady board: could not init Supabase", e);
+      }
+      if (!client) {
+        statusEl.textContent = "Couldn't load the board.";
+        setMsg("Supabase client failed to load — check your connection and config.js.", "err");
+        return;
+      }
+
+      function columnFor(status) {
+        return boardEl.querySelector('.col[data-status="' + status + '"]');
+      }
+
+      function refreshCounts() {
+        boardEl.querySelectorAll(".col").forEach(function (col) {
+          var cards = col.querySelectorAll(".card").length;
+          col.querySelector(".col-count").textContent = cards;
+          var empty = col.querySelector(".col-empty");
+          if (!cards && !empty) {
+            var placeholder = document.createElement("div");
+            placeholder.className = "col-empty";
+            placeholder.textContent = "Nothing here";
+            col.querySelector(".cards").appendChild(placeholder);
+          } else if (cards && empty) {
+            empty.remove();
+          }
+        });
+      }
+
+      function makeCard(task) {
+        var card = document.createElement("button");
+        card.type = "button";
+        card.className = "card";
+        card.dataset.id = task.id;
+        card.dataset.status = task.status;
+
+        var h = document.createElement("h3");
+        h.textContent = (task.title || "Untitled").trim();
+        card.appendChild(h);
+
+        if (task.description) {
+          var p = document.createElement("p");
+          p.textContent = task.description;
+          card.appendChild(p);
+        }
+
+        card.addEventListener("click", function () { moveCard(card); });
+        return card;
+      }
+
+      function moveCard(card) {
+        var from = card.dataset.status;
+        var to = NEXT[from];
+        if (!to) return;
+
+        card.classList.add("is-moving");
+        setMsg("", "");
+
+        client
+          .from("tasks")
+          .update({ status: to })
+          .eq("id", card.dataset.id)
+          .then(function (res) {
+            card.classList.remove("is-moving");
+            if (res.error) {
+              console.error("Steady board: update failed", res.error);
+              setMsg("Couldn't move that card — please try again.", "err");
+              return;
+            }
+            card.dataset.status = to;
+            columnFor(to).querySelector(".cards").appendChild(card);
+            refreshCounts();
+          });
+      }
+
+      client
+        .from("tasks")
+        .select("id, title, description, status")
+        .order("created_at", { ascending: true })
+        .then(function (res) {
+          if (res.error) {
+            console.error("Steady board: select failed", res.error);
+            statusEl.textContent = "Couldn't load the board.";
+            setMsg("Query failed: " + res.error.message, "err");
+            return;
+          }
+
+          var tasks = res.data || [];
+          statusEl.textContent = tasks.length === 1 ? "1 task on the board" : tasks.length + " tasks on the board";
+
+          tasks.forEach(function (task) {
+            var col = columnFor(task.status);
+            if (!col) return; // ignore rows with an unknown status
+            col.querySelector(".cards").appendChild(makeCard(task));
+          });
+
+          refreshCounts();
+          boardEl.hidden = false;
+          hintEl.hidden = false;
+        });
+    })();
+  </script>
+</body>
+</html>
