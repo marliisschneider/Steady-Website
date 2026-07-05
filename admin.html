@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Steady Leads — Admin</title>
+  <meta name="robots" content="noindex, nofollow">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,380;9..144,450;9..144,550;9..144,600&family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="steady.css">
+  <meta name="theme-color" content="#14352a">
+  <link rel="icon" href="favicon.ico" sizes="any">
+  <link rel="icon" href="favicon.svg" type="image/svg+xml">
+</head>
+<body>
+
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="index.html" class="brand"><span class="dot"></span>Steady</a>
+      <button class="nav-toggle" aria-label="Menu" onclick="document.getElementById('navlinks').classList.toggle('open')">☰</button>
+      <div class="nav-links" id="navlinks">
+        <a href="index.html">Home</a>
+        <a href="coaching.html">Coaching</a>
+        <a href="learn.html">Learn</a>
+        <a href="quiz.html">Quiz</a>
+        <a href="about.html">About</a>
+        <a href="contact.html" class="cta">Book a call</a>
+      </div>
+    </div>
+  </nav>
+
+  <section class="article-hero">
+    <div class="wrap narrow">
+      <p class="eyebrow">Admin</p>
+      <h1>Steady Leads</h1>
+      <p class="lede" id="lead-count">Loading leads…</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="wrap">
+      <div class="table-scroll">
+        <table class="data-table" id="leads-table" hidden>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Email</th>
+              <th>Source</th>
+              <th>Signed up</th>
+            </tr>
+          </thead>
+          <tbody id="leads-body"></tbody>
+        </table>
+      </div>
+      <p class="form-msg" id="leads-msg" role="status" aria-live="polite"></p>
+    </div>
+  </section>
+
+  <footer class="footer">
+    <div class="wrap">
+      <div class="footer-bottom">
+        <span>© 2026 Steady Nutrition Coaching</span>
+        <span>Internal dashboard — not linked from the public site.</span>
+      </div>
+    </div>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script>
+    (function () {
+      "use strict";
+
+      var countEl = document.getElementById("lead-count");
+      var tableEl = document.getElementById("leads-table");
+      var bodyEl = document.getElementById("leads-body");
+      var msgEl = document.getElementById("leads-msg");
+
+      function fail(text) {
+        countEl.textContent = "Couldn't load leads.";
+        msgEl.textContent = text;
+        msgEl.className = "form-msg err";
+      }
+
+      function fmtDate(iso) {
+        if (!iso) return "—";
+        var d = new Date(iso);
+        if (isNaN(d)) return iso;
+        return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" }) +
+          ", " + d.toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
+      }
+
+      var client = null;
+      try {
+        client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+      } catch (e) {
+        console.error("Steady admin: could not init Supabase", e);
+      }
+      if (!client) {
+        fail("Supabase client failed to load — check your connection and config.js.");
+        return;
+      }
+
+      client
+        .from("steady_leads")
+        .select("name, email, source, created_at")
+        .order("created_at", { ascending: false })
+        .then(function (res) {
+          if (res.error) {
+            console.error("Steady admin: select failed", res.error);
+            fail("Query failed: " + res.error.message +
+              " (if this says permission denied, the table's RLS policy doesn't allow reads with the publishable key).");
+            return;
+          }
+
+          var rows = res.data || [];
+          countEl.textContent = rows.length === 1 ? "1 lead total" : rows.length + " leads total";
+
+          if (!rows.length) {
+            msgEl.textContent = "No leads yet — they'll show up here as forms are submitted.";
+            return;
+          }
+
+          rows.forEach(function (row) {
+            var tr = document.createElement("tr");
+            [row.name || "—", row.email || "—", row.source || "—", fmtDate(row.created_at)].forEach(function (val) {
+              var td = document.createElement("td");
+              td.textContent = val;
+              tr.appendChild(td);
+            });
+            bodyEl.appendChild(tr);
+          });
+          tableEl.hidden = false;
+        });
+    })();
+  </script>
+</body>
+</html>
