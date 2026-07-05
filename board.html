@@ -14,6 +14,8 @@
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <style>
     /* Kanban — page-specific styles */
+    /* Explicit display values below would otherwise override the hidden attribute */
+    [hidden] { display: none !important; }
     .board {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
