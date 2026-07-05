@@ -1,21 +1,22 @@
 /* Steady Tasks board
    State-driven kanban over the Supabase tasks table.
+   Click a card to edit; drag to move between columns.
    Depends on: @supabase/supabase-js (CDN) + config.js (SUPABASE_URL, SUPABASE_KEY)
 */
 (function () {
   "use strict";
 
-  var NEXT = { todo: "in_progress", in_progress: "done", done: "todo" };
-  var COLUMNS = ["todo", "in_progress", "done"];
+  var COLUMNS = ["backlog", "todo", "in_progress", "done"];
   var PRIORITY_RANK = { high: 0, medium: 1, low: 2 };
   var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
-  var MODAL_FIELDS = ["title", "description", "priority", "category", "due_date"];
+  var MODAL_FIELDS = ["title", "description", "priority", "category", "due_date", "owner"];
+  var CAT_COLORS = 8; // .cat-0 … .cat-7 in board.html
 
   var ICONS = {
-    edit: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4z"/></svg>',
     archive: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>',
     restore: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M12 17v-4"/><path d="M9.5 15.5 12 13l2.5 2.5"/></svg>',
-    calendar: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>'
+    calendar: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
+    note: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
   };
 
   // --- DOM refs ------------------------------------------------------------
@@ -29,15 +30,21 @@
   var toolbarEl = document.getElementById("board-toolbar");
   var searchInput = document.getElementById("board-search");
   var archToggle = document.getElementById("show-archived");
+  var filterRowEl = document.getElementById("filter-row");
   var overlayEl = document.getElementById("modal-overlay");
   var modalStatusEl = document.getElementById("modal-status");
+  var notesListEl = document.getElementById("m-notes");
+  var notesEmptyEl = document.getElementById("m-notes-empty");
+  var noteInputEl = document.getElementById("m-note-input");
+  var blockedToggle = document.getElementById("m-blocked");
 
   // --- State ---------------------------------------------------------------
   var tasks = new Map(); // id -> task row
   var state = {
     search: "",
     showArchived: false,
-    sort: { todo: "created_at", in_progress: "created_at", done: "created_at" }
+    sort: { backlog: "created_at", todo: "created_at", in_progress: "created_at", done: "created_at" },
+    filters: { owner: new Set(), category: new Set(), priority: new Set(), blocked: false }
   };
   var popId = null;      // card to animate on next render
   var openTaskId = null; // task shown in the edit modal
@@ -65,14 +72,15 @@
     return boardEl.querySelector('.col[data-status="' + status + '"]');
   }
 
-  function todayStr() {
-    var d = new Date();
+  function dateStr(d) {
     return d.getFullYear() + "-" +
       String(d.getMonth() + 1).padStart(2, "0") + "-" +
       String(d.getDate()).padStart(2, "0");
   }
 
-  function fmtDue(iso) {
+  function todayStr() { return dateStr(new Date()); }
+
+  function fmtDate(iso) {
     var p = String(iso).slice(0, 10).split("-"); // avoids Date() UTC-parsing offset
     return MONTHS[+p[1] - 1] + " " + (+p[2]);
   }
@@ -83,12 +91,45 @@
       String(task.due_date).slice(0, 10) < todayStr();
   }
 
+  function catClass(name) {
+    var hash = 0;
+    for (var i = 0; i < name.length; i++) hash = (hash * 31 + name.charCodeAt(i)) % 997;
+    return "cat-" + (hash % CAT_COLORS);
+  }
+
+  function initials(name) {
+    var parts = name.trim().split(/\s+/).slice(0, 2);
+    return parts.map(function (p) { return p[0]; }).join("").toUpperCase();
+  }
+
+  function taskNotes(task) {
+    return Array.isArray(task.notes) ? task.notes : [];
+  }
+
+  function distinct(field) {
+    var seen = new Set();
+    tasks.forEach(function (t) {
+      var v = t[field];
+      if (v && String(v).trim()) seen.add(String(v).trim());
+    });
+    return Array.from(seen).sort();
+  }
+
   function matchesSearch(task) {
     if (!state.search) return true;
     var q = state.search.toLowerCase();
-    return [task.title, task.description, task.category].some(function (v) {
+    return [task.title, task.description, task.category, task.owner].some(function (v) {
       return v && String(v).toLowerCase().indexOf(q) !== -1;
     });
+  }
+
+  function matchesFilters(task) {
+    var f = state.filters;
+    if (f.blocked && !task.blocked) return false;
+    if (f.owner.size && !f.owner.has(task.owner || "")) return false;
+    if (f.category.size && !f.category.has(task.category || "")) return false;
+    if (f.priority.size && !f.priority.has(task.priority || "medium")) return false;
+    return true;
   }
 
   function sortTasks(list, key) {
@@ -136,7 +177,7 @@
       tasks.forEach(function (t) {
         if (t.status !== status) return;
         if (t.archived && !state.showArchived) return;
-        if (!matchesSearch(t)) return;
+        if (!matchesSearch(t) || !matchesFilters(t)) return;
         list.push(t);
       });
       list = sortTasks(list, state.sort[status]);
@@ -145,7 +186,9 @@
       if (!list.length) {
         var empty = document.createElement("div");
         empty.className = "col-empty";
-        empty.textContent = state.search ? "No matching tasks." : "No tasks here yet. Add one to get started.";
+        empty.textContent = (state.search || filtersActive())
+          ? "No matching tasks."
+          : "No tasks here yet. Add one to get started.";
         cardsEl.appendChild(empty);
       } else {
         list.forEach(function (t) { cardsEl.appendChild(makeCard(t)); });
@@ -153,11 +196,9 @@
       col.querySelector(".col-count").textContent = list.length;
     });
 
-    var total = 0;
-    tasks.forEach(function (t) { if (!t.archived) total++; });
-    statusEl.textContent =
-      (total === 1 ? "1 task on the board" : total + " tasks on the board") +
-      (live ? " · syncing live" : "");
+    renderStatusLine();
+    renderFilters();
+    renderDatalists();
 
     if (popId) {
       var el = boardEl.querySelector('.card[data-id="' + popId + '"]');
@@ -169,31 +210,111 @@
     }
   }
 
+  function filtersActive() {
+    var f = state.filters;
+    return f.blocked || f.owner.size || f.category.size || f.priority.size;
+  }
+
+  function renderStatusLine() {
+    var total = 0, overdue = 0, blocked = 0;
+    tasks.forEach(function (t) {
+      if (t.archived) return;
+      total++;
+      if (isOverdue(t)) overdue++;
+      if (t.blocked && t.status !== "done") blocked++;
+    });
+
+    statusEl.textContent = "";
+    statusEl.appendChild(document.createTextNode(
+      (total === 1 ? "1 task on the board" : total + " tasks on the board") +
+      (live ? " · syncing live" : "")
+    ));
+
+    var alerts = [];
+    if (overdue) alerts.push(overdue + " overdue");
+    if (blocked) alerts.push(blocked + " blocked");
+    if (alerts.length) {
+      var span = document.createElement("span");
+      span.className = "board-alert";
+      span.textContent = " · " + alerts.join(" · ");
+      statusEl.appendChild(span);
+    }
+  }
+
+  function renderFilters() {
+    filterRowEl.textContent = "";
+
+    function addChip(label, isActive, onToggle) {
+      var chip = document.createElement("button");
+      chip.type = "button";
+      chip.className = "filter-chip" + (isActive ? " active" : "");
+      chip.textContent = label;
+      chip.addEventListener("click", function () { onToggle(); render(); });
+      filterRowEl.appendChild(chip);
+    }
+
+    function addSet(values, set) {
+      values.forEach(function (v) {
+        addChip(v, set.has(v), function () { set.has(v) ? set.delete(v) : set.add(v); });
+      });
+    }
+
+    function addSep() {
+      var sep = document.createElement("span");
+      sep.className = "filter-sep";
+      filterRowEl.appendChild(sep);
+    }
+
+    var label = document.createElement("span");
+    label.className = "filter-label";
+    label.textContent = "Filter";
+    filterRowEl.appendChild(label);
+
+    ["high", "medium", "low"].forEach(function (p) {
+      addChip(p[0].toUpperCase() + p.slice(1), state.filters.priority.has(p), function () {
+        state.filters.priority.has(p) ? state.filters.priority.delete(p) : state.filters.priority.add(p);
+      });
+    });
+
+    var anyBlocked = false;
+    tasks.forEach(function (t) { if (t.blocked && !t.archived) anyBlocked = true; });
+    if (anyBlocked) {
+      addChip("Blocked", state.filters.blocked, function () { state.filters.blocked = !state.filters.blocked; });
+    }
+
+    var owners = distinct("owner");
+    if (owners.length) { addSep(); addSet(owners, state.filters.owner); }
+
+    var cats = distinct("category");
+    if (cats.length) { addSep(); addSet(cats, state.filters.category); }
+  }
+
+  function renderDatalists() {
+    ["owner", "category"].forEach(function (field) {
+      var dl = document.getElementById(field + "-list");
+      dl.textContent = "";
+      distinct(field).forEach(function (v) {
+        var opt = document.createElement("option");
+        opt.value = v;
+        dl.appendChild(opt);
+      });
+    });
+  }
+
   function makeCard(task) {
     var card = document.createElement("div");
-    card.className = "card" + (task.archived ? " is-archived" : "");
+    card.className = "card" +
+      (task.archived ? " is-archived" : "") +
+      (task.blocked ? " is-blocked" : "");
     card.setAttribute("role", "button");
     card.tabIndex = 0;
     card.draggable = true;
     card.dataset.id = task.id;
 
-    // corner actions
-    var actions = document.createElement("div");
-    actions.className = "card-actions";
-
-    var editBtn = document.createElement("button");
-    editBtn.type = "button";
-    editBtn.className = "card-action";
-    editBtn.title = "Edit task";
-    editBtn.setAttribute("aria-label", "Edit task");
-    editBtn.innerHTML = ICONS.edit;
-    editBtn.addEventListener("click", function (e) {
-      e.stopPropagation();
-      openModal(task);
-    });
-    actions.appendChild(editBtn);
-
+    // corner actions (archive only on Done / archived cards)
     if (task.status === "done" || task.archived) {
+      var actions = document.createElement("div");
+      actions.className = "card-actions";
       var archBtn = document.createElement("button");
       archBtn.type = "button";
       archBtn.className = "card-action";
@@ -205,8 +326,8 @@
         saveTask(task, { archived: !task.archived });
       });
       actions.appendChild(archBtn);
+      card.appendChild(actions);
     }
-    card.appendChild(actions);
 
     var h = document.createElement("h3");
     var dot = document.createElement("span");
@@ -221,12 +342,19 @@
       card.appendChild(p);
     }
 
-    if (task.category || task.due_date) {
+    var notes = taskNotes(task);
+    if (task.category || task.due_date || task.owner || task.blocked || notes.length) {
       var meta = document.createElement("div");
       meta.className = "card-meta";
+      if (task.blocked) {
+        var flag = document.createElement("span");
+        flag.className = "chip chip-blocked";
+        flag.textContent = "Blocked";
+        meta.appendChild(flag);
+      }
       if (task.category) {
         var chip = document.createElement("span");
-        chip.className = "chip";
+        chip.className = "chip " + catClass(task.category);
         chip.textContent = task.category;
         meta.appendChild(chip);
       }
@@ -234,13 +362,28 @@
         var due = document.createElement("span");
         due.className = "due" + (isOverdue(task) ? " overdue" : "");
         due.innerHTML = ICONS.calendar;
-        due.appendChild(document.createTextNode(" " + fmtDue(task.due_date) + (isOverdue(task) ? " · overdue" : "")));
+        due.appendChild(document.createTextNode(" " + fmtDate(task.due_date) + (isOverdue(task) ? " · overdue" : "")));
         meta.appendChild(due);
+      }
+      if (notes.length) {
+        var nc = document.createElement("span");
+        nc.className = "note-count";
+        nc.title = notes.length + (notes.length === 1 ? " note" : " notes");
+        nc.innerHTML = ICONS.note;
+        nc.appendChild(document.createTextNode(" " + notes.length));
+        meta.appendChild(nc);
+      }
+      if (task.owner) {
+        var av = document.createElement("span");
+        av.className = "owner-avatar";
+        av.title = task.owner;
+        av.textContent = initials(task.owner);
+        meta.appendChild(av);
       }
       card.appendChild(meta);
     }
 
-    // drag
+    // drag to move
     var didDrag = false;
     card.addEventListener("dragstart", function (e) {
       didDrag = true;
@@ -253,16 +396,16 @@
       setTimeout(function () { didDrag = false; }, 0);
     });
 
-    // click card body = advance to next column; corner icons excluded
+    // click (or Enter/Space) opens the edit modal; corner icons excluded
     card.addEventListener("click", function (e) {
       if (didDrag || e.target.closest(".card-action")) return;
-      moveTask(task, NEXT[task.status]);
+      openModal(task);
     });
     card.addEventListener("keydown", function (e) {
       if (e.target !== card) return; // let the corner icon buttons handle their own keys
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        moveTask(task, NEXT[task.status]);
+        openModal(task);
       }
     });
 
@@ -297,11 +440,72 @@
       if (field === "priority") val = val || "medium";
       input.value = val || "";
     });
+    blockedToggle.checked = !!task.blocked;
+    renderNotes(task);
+  }
+
+  function renderNotes(task) {
+    var notes = taskNotes(task);
+    notesListEl.textContent = "";
+    notesEmptyEl.hidden = !!notes.length;
+    notes.forEach(function (note, idx) {
+      var li = document.createElement("li");
+      var date = document.createElement("span");
+      date.className = "note-date";
+      date.textContent = note.at ? fmtDate(note.at) : "";
+      var text = document.createElement("span");
+      text.className = "note-text";
+      text.textContent = note.text || "";
+      var del = document.createElement("button");
+      del.type = "button";
+      del.className = "note-del";
+      del.title = "Delete note";
+      del.setAttribute("aria-label", "Delete note");
+      del.textContent = "×";
+      del.addEventListener("click", function () {
+        var next = taskNotes(task).slice();
+        next.splice(idx, 1);
+        setModalStatus("Saving…", false);
+        saveTask(task, { notes: next }, function (error) {
+          renderNotes(task);
+          setModalStatus("Couldn't save: " + error.message, true);
+        }).then(function (res) {
+          if (res && !res.error) { renderNotes(task); setModalStatus("Saved ✓", false); }
+        });
+      });
+      li.appendChild(date);
+      li.appendChild(text);
+      li.appendChild(del);
+      notesListEl.appendChild(li);
+    });
+  }
+
+  function addNote() {
+    var task = tasks.get(openTaskId);
+    if (!task) return;
+    var text = noteInputEl.value.trim();
+    if (!text) { noteInputEl.focus(); return; }
+
+    var next = taskNotes(task).slice();
+    next.push({ text: text, at: new Date().toISOString() });
+    setModalStatus("Saving…", false);
+    saveTask(task, { notes: next }, function (error) {
+      renderNotes(task);
+      setModalStatus("Couldn't save: " + error.message, true);
+    }).then(function (res) {
+      if (res && !res.error) {
+        noteInputEl.value = "";
+        renderNotes(task);
+        setModalStatus("Saved ✓", false);
+        noteInputEl.focus();
+      }
+    });
   }
 
   function openModal(task) {
     openTaskId = task.id;
     fillModal(task, false);
+    noteInputEl.value = "";
     setModalStatus("Changes save automatically", false);
     overlayEl.hidden = false;
     modalInput("title").focus();
@@ -349,7 +553,39 @@
     input.addEventListener("change", function () { saveModalField(field); });
   });
 
+  blockedToggle.addEventListener("change", function () {
+    var task = tasks.get(openTaskId);
+    if (!task) return;
+    setModalStatus("Saving…", false);
+    saveTask(task, { blocked: blockedToggle.checked }, function (error) {
+      blockedToggle.checked = !!task.blocked;
+      setModalStatus("Couldn't save: " + error.message, true);
+    }).then(function (res) {
+      if (res && !res.error) setModalStatus("Saved ✓", false);
+    });
+  });
+
+  document.querySelectorAll(".quick-due button").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var input = modalInput("due_date");
+      if (btn.dataset.days === "clear") {
+        input.value = "";
+      } else {
+        var d = new Date();
+        d.setDate(d.getDate() + parseInt(btn.dataset.days, 10));
+        input.value = dateStr(d);
+      }
+      saveModalField("due_date");
+    });
+  });
+
+  document.getElementById("m-note-add").addEventListener("click", addNote);
+  noteInputEl.addEventListener("keydown", function (e) {
+    if (e.key === "Enter") { e.preventDefault(); addNote(); }
+  });
+
   document.getElementById("modal-close").addEventListener("click", closeModal);
+  document.getElementById("modal-done").addEventListener("click", closeModal);
   overlayEl.addEventListener("mousedown", function (e) {
     if (e.target === overlayEl) closeModal();
   });
@@ -482,6 +718,7 @@
       render();
       formEl.hidden = false;
       toolbarEl.hidden = false;
+      filterRowEl.hidden = false;
       boardEl.hidden = false;
       hintEl.hidden = false;
       titleInput.focus();

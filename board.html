@@ -18,55 +18,58 @@
     [hidden] { display: none !important; }
     .board {
       display: grid;
-      grid-template-columns: repeat(3, 1fr);
-      gap: 22px;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 18px;
       align-items: start;
     }
     .col {
       background: var(--cream-dark);
       border: 1px solid var(--line);
       border-radius: var(--radius);
-      padding: 16px;
+      padding: 14px;
       min-height: 220px;
     }
     .col-head {
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       margin-bottom: 14px;
       padding: 0 4px;
     }
     .col-head h2 {
       font-family: var(--sans);
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 650;
-      letter-spacing: 0.08em;
+      letter-spacing: 0.07em;
       text-transform: uppercase;
       color: var(--green-800);
       margin: 0;
+      white-space: nowrap;
     }
     .col-count {
       font-family: var(--sans);
-      font-size: 0.8rem;
+      font-size: 0.78rem;
       font-weight: 600;
       color: var(--muted);
       background: var(--offwhite);
       border: 1px solid var(--line);
       border-radius: 999px;
-      padding: 1px 10px;
+      padding: 1px 9px;
     }
     .col-sort {
       margin-left: auto;
       font-family: var(--sans);
-      font-size: 0.75rem;
+      font-size: 0.72rem;
       font-weight: 500;
       color: var(--muted);
       background: var(--offwhite);
       border: 1px solid var(--line);
       border-radius: 8px;
-      padding: 3px 6px;
+      padding: 3px 4px;
       cursor: pointer;
+      max-width: 86px;
     }
+    .col.is-backlog .col-head h2 { color: var(--muted); }
     .col.is-done .col-head h2 { color: var(--green-400); }
     .cards { display: flex; flex-direction: column; gap: 12px; }
     .card {
@@ -90,6 +93,9 @@
     .card.is-moving { opacity: 0.45; pointer-events: none; }
     .card.is-dragging { opacity: 0.45; cursor: grabbing; }
     .card.is-archived { opacity: 0.55; }
+    .card.is-blocked { border-left-color: #b3423a; }
+    .col.is-backlog .card { border-left-color: var(--green-200); }
+    .col.is-backlog .card.is-blocked { border-left-color: #b3423a; }
     .col.drag-over {
       background: var(--green-100);
       border-color: var(--green-400);
@@ -101,7 +107,7 @@
     .card-pop { animation: card-pop 0.28s ease; }
     .card h3 {
       font-family: var(--serif);
-      font-size: 1.08rem;
+      font-size: 1.05rem;
       font-weight: 550;
       color: var(--green-900);
       margin: 0 0 4px;
@@ -109,7 +115,7 @@
     }
     .card p {
       font-family: var(--sans);
-      font-size: 0.88rem;
+      font-size: 0.86rem;
       color: var(--muted);
       margin: 0;
       line-height: 1.5;
@@ -141,12 +147,20 @@
       font-size: 0.72rem;
       font-weight: 600;
       letter-spacing: 0.02em;
-      color: var(--green-700);
-      background: var(--green-100);
       border-radius: 999px;
       padding: 2px 10px;
     }
-    .due {
+    /* category color families (assigned by name hash) */
+    .cat-0 { background: var(--green-100); color: var(--green-700); }
+    .cat-1 { background: #f3e2c8; color: #8a5a1d; }
+    .cat-2 { background: #dde4f5; color: #3d5a9e; }
+    .cat-3 { background: #f0dede; color: #a04848; }
+    .cat-4 { background: #e6ddf0; color: #6a4e9e; }
+    .cat-5 { background: #d9ecec; color: #2f7373; }
+    .cat-6 { background: #f0e8d8; color: #7a6a3a; }
+    .cat-7 { background: #e4e8e0; color: #5a6a55; }
+    .chip-blocked { background: #f5dcd8; color: #b3423a; }
+    .due, .note-count {
       font-family: var(--sans);
       font-size: 0.75rem;
       color: var(--muted);
@@ -155,6 +169,21 @@
       gap: 5px;
     }
     .due.overdue { color: #b3423a; font-weight: 600; }
+    .owner-avatar {
+      margin-left: auto;
+      width: 22px; height: 22px;
+      border-radius: 50%;
+      background: var(--green-700);
+      color: var(--white);
+      font-family: var(--sans);
+      font-size: 0.62rem;
+      font-weight: 650;
+      letter-spacing: 0.03em;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      flex: 0 0 auto;
+    }
     .card-actions {
       position: absolute;
       top: 10px; right: 10px;
@@ -172,12 +201,12 @@
     }
     .card-action:hover { background: var(--cream); color: var(--green-700); }
 
-    /* Toolbar */
+    /* Toolbar + filters */
     .board-toolbar {
       display: flex;
       align-items: center;
       gap: 16px;
-      margin-bottom: 22px;
+      margin-bottom: 14px;
     }
     .board-toolbar input[type="search"] { flex: 1; }
     .arch-toggle {
@@ -193,6 +222,42 @@
       user-select: none;
     }
     .arch-toggle input { accent-color: var(--green-600); }
+    .filter-row {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-bottom: 22px;
+    }
+    .filter-label {
+      font-family: var(--sans);
+      font-size: 0.78rem;
+      font-weight: 600;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-right: 2px;
+    }
+    .filter-chip {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      font-weight: 550;
+      color: var(--ink-soft);
+      background: var(--offwhite);
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      padding: 4px 14px;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease, border-color 0.12s ease;
+    }
+    .filter-chip:hover { border-color: var(--green-400); }
+    .filter-chip.active {
+      background: var(--green-700);
+      border-color: var(--green-700);
+      color: var(--white);
+    }
+    .filter-sep { width: 1px; height: 18px; background: var(--line); margin: 0 4px; }
+    .board-alert { color: #ffb4a2; font-weight: 600; }
 
     /* Add-task form */
     .task-form {
@@ -242,7 +307,7 @@
       background: var(--offwhite);
       border-radius: var(--radius);
       box-shadow: 0 24px 60px rgba(16, 40, 30, 0.3);
-      max-width: 540px;
+      max-width: 560px;
       width: 100%;
       max-height: 90vh;
       overflow: auto;
@@ -275,8 +340,68 @@
     .modal .field { margin-bottom: 14px; }
     .modal .field label { color: var(--ink-soft); }
     .modal input, .modal textarea, .modal select { width: 100%; }
-    .modal textarea { min-height: 90px; resize: vertical; }
+    .modal textarea { min-height: 80px; resize: vertical; }
     .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .quick-due { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
+    .quick-due button {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--green-700);
+      background: var(--green-100);
+      border: none;
+      border-radius: 999px;
+      padding: 3px 10px;
+      cursor: pointer;
+    }
+    .quick-due button:hover { background: var(--green-200); }
+    .blocked-toggle {
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      font-weight: 550;
+      color: #b3423a;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      user-select: none;
+      margin-bottom: 14px;
+    }
+    .blocked-toggle input { accent-color: #b3423a; }
+
+    /* Notes */
+    .notes-list { list-style: none; margin: 0 0 10px; padding: 0; }
+    .notes-list li {
+      display: flex;
+      align-items: baseline;
+      gap: 10px;
+      font-family: var(--sans);
+      font-size: 0.86rem;
+      color: var(--ink-soft);
+      line-height: 1.45;
+      padding: 7px 0;
+      border-bottom: 1px dashed var(--line);
+    }
+    .notes-list .note-date {
+      flex: 0 0 auto;
+      font-size: 0.72rem;
+      font-weight: 600;
+      color: var(--muted);
+      text-transform: uppercase;
+      letter-spacing: 0.03em;
+    }
+    .notes-list .note-text { flex: 1; }
+    .note-del {
+      background: none; border: none; cursor: pointer;
+      color: var(--muted); font-size: 0.9rem; line-height: 1;
+      padding: 2px 6px; border-radius: 6px;
+    }
+    .note-del:hover { background: var(--cream); color: #b3423a; }
+    .notes-empty { font-family: var(--sans); font-size: 0.82rem; color: var(--muted); margin: 0 0 10px; }
+    .note-add { display: flex; gap: 8px; }
+    .note-add input { flex: 1; }
+    .note-add .btn { padding: 10px 18px; white-space: nowrap; }
+
     .modal-status {
       font-family: var(--sans);
       font-size: 0.8rem;
@@ -287,7 +412,8 @@
     .modal-status.err { color: #b3423a; }
     .modal-foot {
       display: flex;
-      justify-content: flex-end;
+      justify-content: space-between;
+      align-items: center;
       border-top: 1px solid var(--line);
       padding-top: 16px;
     }
@@ -321,7 +447,10 @@
       margin-top: 18px;
       text-align: center;
     }
-    @media (max-width: 860px) {
+    @media (max-width: 1020px) {
+      .board { grid-template-columns: 1fr 1fr; }
+    }
+    @media (max-width: 640px) {
       .board { grid-template-columns: 1fr; }
       .col { min-height: 0; }
       .task-form { grid-template-columns: 1fr; align-items: stretch; }
@@ -376,7 +505,20 @@
         <label class="arch-toggle"><input type="checkbox" id="show-archived"> Show archived</label>
       </div>
 
+      <div class="filter-row" id="filter-row" hidden></div>
+
       <div class="board" id="board" hidden>
+        <div class="col is-backlog" data-status="backlog">
+          <div class="col-head">
+            <h2>Backlog</h2><span class="col-count">0</span>
+            <select class="col-sort" aria-label="Sort Backlog">
+              <option value="created_at">Created</option>
+              <option value="priority">Priority</option>
+              <option value="due_date">Due date</option>
+            </select>
+          </div>
+          <div class="cards"></div>
+        </div>
         <div class="col" data-status="todo">
           <div class="col-head">
             <h2>To Do</h2><span class="col-count">0</span>
@@ -411,7 +553,7 @@
           <div class="cards"></div>
         </div>
       </div>
-      <p class="board-hint" id="board-hint" hidden>Drag cards between columns, click a card to advance it, or press <strong>N</strong> to add a task. Click ✎ to edit.</p>
+      <p class="board-hint" id="board-hint" hidden>Drag cards between columns to move them. Click a card to edit it, or press <strong>N</strong> to add a task.</p>
       <p class="form-msg" id="board-msg" role="status" aria-live="polite"></p>
     </div>
   </section>
@@ -443,15 +585,40 @@
         <div class="field">
           <label for="m-due_date">Due date</label>
           <input id="m-due_date" type="date">
+          <div class="quick-due">
+            <button type="button" data-days="0">Today</button>
+            <button type="button" data-days="1">Tomorrow</button>
+            <button type="button" data-days="7">Next week</button>
+            <button type="button" data-days="clear">Clear</button>
+          </div>
         </div>
       </div>
+      <div class="modal-row">
+        <div class="field">
+          <label for="m-category">Category</label>
+          <input id="m-category" type="text" list="category-list" placeholder="e.g. Website, Marketing" maxlength="40" autocomplete="off">
+          <datalist id="category-list"></datalist>
+        </div>
+        <div class="field">
+          <label for="m-owner">Owner</label>
+          <input id="m-owner" type="text" list="owner-list" placeholder="Who's on it?" maxlength="40" autocomplete="off">
+          <datalist id="owner-list"></datalist>
+        </div>
+      </div>
+      <label class="blocked-toggle"><input type="checkbox" id="m-blocked"> Blocked — waiting on something</label>
       <div class="field">
-        <label for="m-category">Category</label>
-        <input id="m-category" type="text" placeholder="e.g. Website, Marketing" maxlength="40" autocomplete="off">
+        <label for="m-note-input">Progress notes</label>
+        <ul class="notes-list" id="m-notes"></ul>
+        <p class="notes-empty" id="m-notes-empty">No notes yet — add updates as you go.</p>
+        <div class="note-add">
+          <input id="m-note-input" type="text" placeholder="Add a note…" maxlength="300" autocomplete="off">
+          <button type="button" class="btn btn-ghost" id="m-note-add">Add</button>
+        </div>
       </div>
       <p class="modal-status" id="modal-status">Changes save automatically</p>
       <div class="modal-foot">
         <button type="button" class="btn-danger" id="modal-delete">Delete task</button>
+        <button type="button" class="btn btn-primary" id="modal-done">Done</button>
       </div>
     </div>
   </div>
