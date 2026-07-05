@@ -29,8 +29,8 @@
     }
     .col-head {
       display: flex;
-      align-items: baseline;
-      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
       margin-bottom: 14px;
       padding: 0 4px;
     }
@@ -53,24 +53,32 @@
       border-radius: 999px;
       padding: 1px 10px;
     }
+    .col-sort {
+      margin-left: auto;
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      font-weight: 500;
+      color: var(--muted);
+      background: var(--offwhite);
+      border: 1px solid var(--line);
+      border-radius: 8px;
+      padding: 3px 6px;
+      cursor: pointer;
+    }
     .col.is-done .col-head h2 { color: var(--green-400); }
     .cards { display: flex; flex-direction: column; gap: 12px; }
     .card {
+      position: relative;
       background: var(--white);
       border: 1px solid var(--line);
       border-left: 4px solid var(--green-500);
       border-radius: 10px;
-      padding: 14px 16px;
+      padding: 14px 60px 14px 16px;
       cursor: grab;
       text-align: left;
       width: 100%;
       font: inherit;
       transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
-    }
-    .card.is-dragging { opacity: 0.45; cursor: grabbing; }
-    .col.drag-over {
-      background: var(--green-100);
-      border-color: var(--green-400);
     }
     .card:hover {
       transform: translateY(-2px);
@@ -78,6 +86,17 @@
     }
     .card:focus-visible { outline: 2px solid var(--green-500); outline-offset: 2px; }
     .card.is-moving { opacity: 0.45; pointer-events: none; }
+    .card.is-dragging { opacity: 0.45; cursor: grabbing; }
+    .card.is-archived { opacity: 0.55; }
+    .col.drag-over {
+      background: var(--green-100);
+      border-color: var(--green-400);
+    }
+    @keyframes card-pop {
+      from { transform: scale(0.95); opacity: 0.5; }
+      to   { transform: scale(1); opacity: 1; }
+    }
+    .card-pop { animation: card-pop 0.28s ease; }
     .card h3 {
       font-family: var(--serif);
       font-size: 1.08rem;
@@ -95,15 +114,85 @@
     }
     .col.is-done .card { border-left-color: var(--green-200); }
     .col.is-done .card h3 { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
-    .col-empty {
+
+    /* Card extras */
+    .dot-priority {
+      display: inline-block;
+      width: 9px; height: 9px;
+      border-radius: 50%;
+      margin-right: 8px;
+      vertical-align: 1px;
+      flex: 0 0 auto;
+    }
+    .p-high { background: #b3423a; }
+    .p-medium { background: var(--gold); }
+    .p-low { background: #9aa8a0; }
+    .card-meta {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 8px;
+      margin-top: 10px;
+    }
+    .chip {
+      font-family: var(--sans);
+      font-size: 0.72rem;
+      font-weight: 600;
+      letter-spacing: 0.02em;
+      color: var(--green-700);
+      background: var(--green-100);
+      border-radius: 999px;
+      padding: 2px 10px;
+    }
+    .due {
+      font-family: var(--sans);
+      font-size: 0.75rem;
+      color: var(--muted);
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .due.overdue { color: #b3423a; font-weight: 600; }
+    .card-actions {
+      position: absolute;
+      top: 10px; right: 10px;
+      display: flex;
+      gap: 2px;
+    }
+    .card-action {
+      background: none;
+      border: none;
+      cursor: pointer;
+      color: var(--muted);
+      padding: 5px;
+      border-radius: 6px;
+      line-height: 0;
+    }
+    .card-action:hover { background: var(--cream); color: var(--green-700); }
+
+    /* Toolbar */
+    .board-toolbar {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      margin-bottom: 22px;
+    }
+    .board-toolbar input[type="search"] { flex: 1; }
+    .arch-toggle {
       font-family: var(--sans);
       font-size: 0.85rem;
+      font-weight: 500;
       color: var(--muted);
-      text-align: center;
-      padding: 24px 8px;
-      border: 1px dashed var(--line);
-      border-radius: 10px;
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      cursor: pointer;
+      white-space: nowrap;
+      user-select: none;
     }
+    .arch-toggle input { accent-color: var(--green-600); }
+
+    /* Add-task form */
     .task-form {
       display: grid;
       grid-template-columns: 1fr 1.5fr auto;
@@ -113,10 +202,12 @@
       border: 1px solid var(--line);
       border-radius: var(--radius);
       padding: 18px;
-      margin-bottom: 26px;
+      margin-bottom: 18px;
     }
     .task-form .field label { color: var(--ink-soft); }
-    .task-form input {
+    .task-form input,
+    .board-toolbar input[type="search"],
+    .modal input, .modal textarea, .modal select {
       font-family: var(--sans);
       font-size: 0.95rem;
       color: var(--ink);
@@ -125,14 +216,101 @@
       border-radius: 10px;
       padding: 11px 14px;
     }
-    .task-form input:focus {
+    .task-form input:focus,
+    .board-toolbar input[type="search"]:focus,
+    .modal input:focus, .modal textarea:focus, .modal select:focus {
       outline: none;
       border-color: var(--green-500);
       box-shadow: 0 0 0 3px var(--green-100);
     }
     .task-form .btn { white-space: nowrap; }
-    @media (max-width: 860px) {
-      .task-form { grid-template-columns: 1fr; align-items: stretch; }
+
+    /* Edit modal */
+    .modal-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(16, 40, 30, 0.45);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      z-index: 100;
+    }
+    .modal {
+      background: var(--offwhite);
+      border-radius: var(--radius);
+      box-shadow: 0 24px 60px rgba(16, 40, 30, 0.3);
+      max-width: 540px;
+      width: 100%;
+      max-height: 90vh;
+      overflow: auto;
+      padding: 26px;
+    }
+    .modal-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 18px;
+    }
+    .modal-head h2 {
+      font-family: var(--serif);
+      font-size: 1.4rem;
+      font-weight: 550;
+      color: var(--green-900);
+      margin: 0;
+    }
+    .modal-close {
+      background: none;
+      border: none;
+      font-size: 1.5rem;
+      line-height: 1;
+      color: var(--muted);
+      cursor: pointer;
+      padding: 4px 8px;
+      border-radius: 8px;
+    }
+    .modal-close:hover { background: var(--cream); color: var(--green-800); }
+    .modal .field { margin-bottom: 14px; }
+    .modal .field label { color: var(--ink-soft); }
+    .modal input, .modal textarea, .modal select { width: 100%; }
+    .modal textarea { min-height: 90px; resize: vertical; }
+    .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .modal-status {
+      font-family: var(--sans);
+      font-size: 0.8rem;
+      color: var(--muted);
+      min-height: 1.3em;
+      margin: 4px 0 10px;
+    }
+    .modal-status.err { color: #b3423a; }
+    .modal-foot {
+      display: flex;
+      justify-content: flex-end;
+      border-top: 1px solid var(--line);
+      padding-top: 16px;
+    }
+    .btn-danger {
+      font-family: var(--sans);
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: #b3423a;
+      background: none;
+      border: 1px solid #dcaaa2;
+      border-radius: 10px;
+      padding: 10px 20px;
+      cursor: pointer;
+      transition: background 0.12s ease, color 0.12s ease;
+    }
+    .btn-danger:hover { background: #b3423a; border-color: #b3423a; color: var(--white); }
+
+    .col-empty {
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      color: var(--muted);
+      text-align: center;
+      padding: 24px 8px;
+      border: 1px dashed var(--line);
+      border-radius: 10px;
     }
     .board-hint {
       font-family: var(--sans);
@@ -144,6 +322,11 @@
     @media (max-width: 860px) {
       .board { grid-template-columns: 1fr; }
       .col { min-height: 0; }
+      .task-form { grid-template-columns: 1fr; align-items: stretch; }
+      .board-toolbar { flex-wrap: wrap; }
+      .board-toolbar input[type="search"] { flex-basis: 100%; }
+      .modal { padding: 20px; }
+      .modal-row { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -186,24 +369,90 @@
         <button type="submit" class="btn btn-primary">Add task</button>
       </form>
 
+      <div class="board-toolbar" id="board-toolbar" hidden>
+        <input type="search" id="board-search" placeholder="Search tasks…" aria-label="Search tasks">
+        <label class="arch-toggle"><input type="checkbox" id="show-archived"> Show archived</label>
+      </div>
+
       <div class="board" id="board" hidden>
         <div class="col" data-status="todo">
-          <div class="col-head"><h2>To Do</h2><span class="col-count">0</span></div>
+          <div class="col-head">
+            <h2>To Do</h2><span class="col-count">0</span>
+            <select class="col-sort" aria-label="Sort To Do">
+              <option value="created_at">Created</option>
+              <option value="priority">Priority</option>
+              <option value="due_date">Due date</option>
+            </select>
+          </div>
           <div class="cards"></div>
         </div>
         <div class="col" data-status="in_progress">
-          <div class="col-head"><h2>In Progress</h2><span class="col-count">0</span></div>
+          <div class="col-head">
+            <h2>In Progress</h2><span class="col-count">0</span>
+            <select class="col-sort" aria-label="Sort In Progress">
+              <option value="created_at">Created</option>
+              <option value="priority">Priority</option>
+              <option value="due_date">Due date</option>
+            </select>
+          </div>
           <div class="cards"></div>
         </div>
         <div class="col is-done" data-status="done">
-          <div class="col-head"><h2>Done</h2><span class="col-count">0</span></div>
+          <div class="col-head">
+            <h2>Done</h2><span class="col-count">0</span>
+            <select class="col-sort" aria-label="Sort Done">
+              <option value="created_at">Created</option>
+              <option value="priority">Priority</option>
+              <option value="due_date">Due date</option>
+            </select>
+          </div>
           <div class="cards"></div>
         </div>
       </div>
-      <p class="board-hint" id="board-hint" hidden>Drag a card to any column — or click it to move it along. Clicking a done card sends it back to To&nbsp;Do.</p>
+      <p class="board-hint" id="board-hint" hidden>Drag cards between columns, click a card to advance it, or press <strong>N</strong> to add a task. Click ✎ to edit.</p>
       <p class="form-msg" id="board-msg" role="status" aria-live="polite"></p>
     </div>
   </section>
+
+  <!-- Edit modal -->
+  <div class="modal-overlay" id="modal-overlay" hidden>
+    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+      <div class="modal-head">
+        <h2 id="modal-title">Edit task</h2>
+        <button type="button" class="modal-close" id="modal-close" aria-label="Close">×</button>
+      </div>
+      <div class="field">
+        <label for="m-title">Title</label>
+        <input id="m-title" type="text" maxlength="120" autocomplete="off">
+      </div>
+      <div class="field">
+        <label for="m-description">Description</label>
+        <textarea id="m-description" maxlength="600"></textarea>
+      </div>
+      <div class="modal-row">
+        <div class="field">
+          <label for="m-priority">Priority</label>
+          <select id="m-priority">
+            <option value="low">Low</option>
+            <option value="medium">Medium</option>
+            <option value="high">High</option>
+          </select>
+        </div>
+        <div class="field">
+          <label for="m-due_date">Due date</label>
+          <input id="m-due_date" type="date">
+        </div>
+      </div>
+      <div class="field">
+        <label for="m-category">Category</label>
+        <input id="m-category" type="text" placeholder="e.g. Website, Marketing" maxlength="40" autocomplete="off">
+      </div>
+      <p class="modal-status" id="modal-status">Changes save automatically</p>
+      <div class="modal-foot">
+        <button type="button" class="btn-danger" id="modal-delete">Delete task</button>
+      </div>
+    </div>
+  </div>
 
   <footer class="footer">
     <div class="wrap">
@@ -216,215 +465,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
-  <script>
-    (function () {
-      "use strict";
-
-      var NEXT = { todo: "in_progress", in_progress: "done", done: "todo" };
-      var statusEl = document.getElementById("board-status");
-      var boardEl = document.getElementById("board");
-      var hintEl = document.getElementById("board-hint");
-      var msgEl = document.getElementById("board-msg");
-
-      function setMsg(text, kind) {
-        msgEl.textContent = text;
-        msgEl.className = "form-msg " + (kind || "");
-      }
-
-      var client = null;
-      try {
-        client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
-      } catch (e) {
-        console.error("Steady board: could not init Supabase", e);
-      }
-      if (!client) {
-        statusEl.textContent = "Couldn't load the board.";
-        setMsg("Supabase client failed to load — check your connection and config.js.", "err");
-        return;
-      }
-
-      function columnFor(status) {
-        return boardEl.querySelector('.col[data-status="' + status + '"]');
-      }
-
-      function refreshCounts() {
-        var total = boardEl.querySelectorAll(".card").length;
-        statusEl.textContent = total === 1 ? "1 task on the board" : total + " tasks on the board";
-        boardEl.querySelectorAll(".col").forEach(function (col) {
-          var cards = col.querySelectorAll(".card").length;
-          col.querySelector(".col-count").textContent = cards;
-          var empty = col.querySelector(".col-empty");
-          if (!cards && !empty) {
-            var placeholder = document.createElement("div");
-            placeholder.className = "col-empty";
-            placeholder.textContent = "Nothing here";
-            col.querySelector(".cards").appendChild(placeholder);
-          } else if (cards && empty) {
-            empty.remove();
-          }
-        });
-      }
-
-      // Buttons aren't reliably draggable in every browser, so cards are
-      // divs with role="button" + keyboard support instead.
-      function makeCard(task) {
-        var card = document.createElement("div");
-        card.className = "card";
-        card.setAttribute("role", "button");
-        card.tabIndex = 0;
-        card.draggable = true;
-        card.dataset.id = task.id;
-        card.dataset.status = task.status;
-
-        var h = document.createElement("h3");
-        h.textContent = (task.title || "Untitled").trim();
-        card.appendChild(h);
-
-        if (task.description) {
-          var p = document.createElement("p");
-          p.textContent = task.description;
-          card.appendChild(p);
-        }
-
-        var didDrag = false;
-
-        card.addEventListener("dragstart", function (e) {
-          didDrag = true;
-          e.dataTransfer.setData("text/plain", task.id);
-          e.dataTransfer.effectAllowed = "move";
-          card.classList.add("is-dragging");
-        });
-        card.addEventListener("dragend", function () {
-          card.classList.remove("is-dragging");
-          // let the click that follows a drop pass through untouched next time
-          setTimeout(function () { didDrag = false; }, 0);
-        });
-
-        // Click-to-cycle fallback (skipped when the click is the tail end of a drag)
-        card.addEventListener("click", function () {
-          if (didDrag) return;
-          moveCardTo(card, NEXT[card.dataset.status]);
-        });
-        card.addEventListener("keydown", function (e) {
-          if (e.key === "Enter" || e.key === " ") {
-            e.preventDefault();
-            moveCardTo(card, NEXT[card.dataset.status]);
-          }
-        });
-
-        return card;
-      }
-
-      function moveCardTo(card, to) {
-        if (!to || to === card.dataset.status) return;
-
-        card.classList.add("is-moving");
-        setMsg("", "");
-
-        client
-          .from("tasks")
-          .update({ status: to })
-          .eq("id", card.dataset.id)
-          .then(function (res) {
-            card.classList.remove("is-moving");
-            if (res.error) {
-              console.error("Steady board: update failed", res.error);
-              setMsg("Couldn't move that card — please try again.", "err");
-              return;
-            }
-            card.dataset.status = to;
-            columnFor(to).querySelector(".cards").appendChild(card);
-            refreshCounts();
-          });
-      }
-
-      // Add-task form
-      var formEl = document.getElementById("task-form");
-      formEl.addEventListener("submit", function (e) {
-        e.preventDefault();
-
-        var titleInput = document.getElementById("t-title");
-        var descInput = document.getElementById("t-desc");
-        var btn = formEl.querySelector('button[type="submit"]');
-        var title = titleInput.value.trim();
-        if (!title) { titleInput.focus(); return; }
-
-        var row = {
-          title: title,
-          description: descInput.value.trim() || null,
-          status: "todo"
-        };
-
-        btn.disabled = true;
-        btn.textContent = "Adding…";
-        setMsg("", "");
-
-        // .select() returns the inserted row so the card gets its real id
-        client
-          .from("tasks")
-          .insert(row)
-          .select()
-          .single()
-          .then(function (res) {
-            btn.disabled = false;
-            btn.textContent = "Add task";
-            if (res.error) {
-              console.error("Steady board: insert failed", res.error);
-              setMsg("Couldn't add that task — please try again.", "err");
-              return;
-            }
-            columnFor("todo").querySelector(".cards").appendChild(makeCard(res.data));
-            refreshCounts();
-            formEl.reset();
-            titleInput.focus();
-          });
-      });
-
-      // Columns accept drops
-      boardEl.querySelectorAll(".col").forEach(function (col) {
-        col.addEventListener("dragover", function (e) {
-          e.preventDefault(); // required to allow dropping
-          e.dataTransfer.dropEffect = "move";
-          col.classList.add("drag-over");
-        });
-        col.addEventListener("dragleave", function (e) {
-          if (!col.contains(e.relatedTarget)) col.classList.remove("drag-over");
-        });
-        col.addEventListener("drop", function (e) {
-          e.preventDefault();
-          col.classList.remove("drag-over");
-          var id = e.dataTransfer.getData("text/plain");
-          var card = boardEl.querySelector('.card[data-id="' + id + '"]');
-          if (card) moveCardTo(card, col.dataset.status);
-        });
-      });
-
-      client
-        .from("tasks")
-        .select("id, title, description, status")
-        .order("created_at", { ascending: true })
-        .then(function (res) {
-          if (res.error) {
-            console.error("Steady board: select failed", res.error);
-            statusEl.textContent = "Couldn't load the board.";
-            setMsg("Query failed: " + res.error.message, "err");
-            return;
-          }
-
-          var tasks = res.data || [];
-
-          tasks.forEach(function (task) {
-            var col = columnFor(task.status);
-            if (!col) return; // ignore rows with an unknown status
-            col.querySelector(".cards").appendChild(makeCard(task));
-          });
-
-          refreshCounts();
-          formEl.hidden = false;
-          boardEl.hidden = false;
-          hintEl.hidden = false;
-        });
-    })();
-  </script>
+  <script src="board.js"></script>
 </body>
 </html>
