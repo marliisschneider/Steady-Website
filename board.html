@@ -61,11 +61,16 @@
       border-left: 4px solid var(--green-500);
       border-radius: 10px;
       padding: 14px 16px;
-      cursor: pointer;
+      cursor: grab;
       text-align: left;
       width: 100%;
       font: inherit;
       transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
+    }
+    .card.is-dragging { opacity: 0.45; cursor: grabbing; }
+    .col.drag-over {
+      background: var(--green-100);
+      border-color: var(--green-400);
     }
     .card:hover {
       transform: translateY(-2px);
@@ -153,7 +158,7 @@
           <div class="cards"></div>
         </div>
       </div>
-      <p class="board-hint" id="board-hint" hidden>Click a card to move it to the next column. Clicking a done card sends it back to To&nbsp;Do.</p>
+      <p class="board-hint" id="board-hint" hidden>Drag a card to any column — or click it to move it along. Clicking a done card sends it back to To&nbsp;Do.</p>
       <p class="form-msg" id="board-msg" role="status" aria-live="polite"></p>
     </div>
   </section>
@@ -216,10 +221,14 @@
         });
       }
 
+      // Buttons aren't reliably draggable in every browser, so cards are
+      // divs with role="button" + keyboard support instead.
       function makeCard(task) {
-        var card = document.createElement("button");
-        card.type = "button";
+        var card = document.createElement("div");
         card.className = "card";
+        card.setAttribute("role", "button");
+        card.tabIndex = 0;
+        card.draggable = true;
         card.dataset.id = task.id;
         card.dataset.status = task.status;
 
@@ -233,14 +242,37 @@
           card.appendChild(p);
         }
 
-        card.addEventListener("click", function () { moveCard(card); });
+        var didDrag = false;
+
+        card.addEventListener("dragstart", function (e) {
+          didDrag = true;
+          e.dataTransfer.setData("text/plain", task.id);
+          e.dataTransfer.effectAllowed = "move";
+          card.classList.add("is-dragging");
+        });
+        card.addEventListener("dragend", function () {
+          card.classList.remove("is-dragging");
+          // let the click that follows a drop pass through untouched next time
+          setTimeout(function () { didDrag = false; }, 0);
+        });
+
+        // Click-to-cycle fallback (skipped when the click is the tail end of a drag)
+        card.addEventListener("click", function () {
+          if (didDrag) return;
+          moveCardTo(card, NEXT[card.dataset.status]);
+        });
+        card.addEventListener("keydown", function (e) {
+          if (e.key === "Enter" || e.key === " ") {
+            e.preventDefault();
+            moveCardTo(card, NEXT[card.dataset.status]);
+          }
+        });
+
         return card;
       }
 
-      function moveCard(card) {
-        var from = card.dataset.status;
-        var to = NEXT[from];
-        if (!to) return;
+      function moveCardTo(card, to) {
+        if (!to || to === card.dataset.status) return;
 
         card.classList.add("is-moving");
         setMsg("", "");
@@ -261,6 +293,25 @@
             refreshCounts();
           });
       }
+
+      // Columns accept drops
+      boardEl.querySelectorAll(".col").forEach(function (col) {
+        col.addEventListener("dragover", function (e) {
+          e.preventDefault(); // required to allow dropping
+          e.dataTransfer.dropEffect = "move";
+          col.classList.add("drag-over");
+        });
+        col.addEventListener("dragleave", function (e) {
+          if (!col.contains(e.relatedTarget)) col.classList.remove("drag-over");
+        });
+        col.addEventListener("drop", function (e) {
+          e.preventDefault();
+          col.classList.remove("drag-over");
+          var id = e.dataTransfer.getData("text/plain");
+          var card = boardEl.querySelector('.card[data-id="' + id + '"]');
+          if (card) moveCardTo(card, col.dataset.status);
+        });
+      });
 
       client
         .from("tasks")
