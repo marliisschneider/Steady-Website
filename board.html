@@ -104,6 +104,36 @@
       border: 1px dashed var(--line);
       border-radius: 10px;
     }
+    .task-form {
+      display: grid;
+      grid-template-columns: 1fr 1.5fr auto;
+      gap: 14px;
+      align-items: end;
+      background: var(--white);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 18px;
+      margin-bottom: 26px;
+    }
+    .task-form .field label { color: var(--ink-soft); }
+    .task-form input {
+      font-family: var(--sans);
+      font-size: 0.95rem;
+      color: var(--ink);
+      background: var(--offwhite);
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      padding: 11px 14px;
+    }
+    .task-form input:focus {
+      outline: none;
+      border-color: var(--green-500);
+      box-shadow: 0 0 0 3px var(--green-100);
+    }
+    .task-form .btn { white-space: nowrap; }
+    @media (max-width: 860px) {
+      .task-form { grid-template-columns: 1fr; align-items: stretch; }
+    }
     .board-hint {
       font-family: var(--sans);
       font-size: 0.85rem;
@@ -144,6 +174,18 @@
 
   <section>
     <div class="wrap">
+      <form class="task-form" id="task-form" hidden>
+        <div class="field">
+          <label for="t-title">Title</label>
+          <input id="t-title" name="title" type="text" placeholder="What needs doing?" required maxlength="120" autocomplete="off">
+        </div>
+        <div class="field">
+          <label for="t-desc">Description</label>
+          <input id="t-desc" name="description" type="text" placeholder="A little context (optional)" maxlength="300" autocomplete="off">
+        </div>
+        <button type="submit" class="btn btn-primary">Add task</button>
+      </form>
+
       <div class="board" id="board" hidden>
         <div class="col" data-status="todo">
           <div class="col-head"><h2>To Do</h2><span class="col-count">0</span></div>
@@ -206,6 +248,8 @@
       }
 
       function refreshCounts() {
+        var total = boardEl.querySelectorAll(".card").length;
+        statusEl.textContent = total === 1 ? "1 task on the board" : total + " tasks on the board";
         boardEl.querySelectorAll(".col").forEach(function (col) {
           var cards = col.querySelectorAll(".card").length;
           col.querySelector(".col-count").textContent = cards;
@@ -294,6 +338,48 @@
           });
       }
 
+      // Add-task form
+      var formEl = document.getElementById("task-form");
+      formEl.addEventListener("submit", function (e) {
+        e.preventDefault();
+
+        var titleInput = document.getElementById("t-title");
+        var descInput = document.getElementById("t-desc");
+        var btn = formEl.querySelector('button[type="submit"]');
+        var title = titleInput.value.trim();
+        if (!title) { titleInput.focus(); return; }
+
+        var row = {
+          title: title,
+          description: descInput.value.trim() || null,
+          status: "todo"
+        };
+
+        btn.disabled = true;
+        btn.textContent = "Adding…";
+        setMsg("", "");
+
+        // .select() returns the inserted row so the card gets its real id
+        client
+          .from("tasks")
+          .insert(row)
+          .select()
+          .single()
+          .then(function (res) {
+            btn.disabled = false;
+            btn.textContent = "Add task";
+            if (res.error) {
+              console.error("Steady board: insert failed", res.error);
+              setMsg("Couldn't add that task — please try again.", "err");
+              return;
+            }
+            columnFor("todo").querySelector(".cards").appendChild(makeCard(res.data));
+            refreshCounts();
+            formEl.reset();
+            titleInput.focus();
+          });
+      });
+
       // Columns accept drops
       boardEl.querySelectorAll(".col").forEach(function (col) {
         col.addEventListener("dragover", function (e) {
@@ -326,7 +412,6 @@
           }
 
           var tasks = res.data || [];
-          statusEl.textContent = tasks.length === 1 ? "1 task on the board" : tasks.length + " tasks on the board";
 
           tasks.forEach(function (task) {
             var col = columnFor(task.status);
@@ -335,6 +420,7 @@
           });
 
           refreshCounts();
+          formEl.hidden = false;
           boardEl.hidden = false;
           hintEl.hidden = false;
         });
