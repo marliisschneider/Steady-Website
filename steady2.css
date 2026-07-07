@@ -1044,3 +1044,48 @@ h1 { letter-spacing: -0.022em; }
 @media (max-width: 900px) {
   .viz-grid { grid-template-columns: 1fr; max-width: 460px; margin: 0 auto; }
 }
+
+/* ============================================================
+   DE-BEIGE — fresher, cleaner light base (keeps amber warmth)
+   ============================================================ */
+:root {
+  --offwhite: #fbfdfc;   /* crisp near-white body */
+  --cream:    #eef4f0;   /* soft sage mist for section bands */
+  --cream-dark: #e3ece6;
+  --line:     #e2e9e4;
+}
+body { background: var(--offwhite); }
+/* Give the cream bands a subtle fresh tint + crisp separators */
+.bg-cream { background: var(--cream); border-top: 1px solid #e6ede8; border-bottom: 1px solid #e6ede8; }
+.callout { background: linear-gradient(180deg, var(--amber-soft), #fbfaf6); }
+
+/* ---- CTA trust microcopy ---- */
+.cta-trust {
+  font-size: 0.85rem; color: var(--muted); margin: 16px 0 0;
+  display: flex; gap: 8px; align-items: center; flex-wrap: wrap;
+}
+.hero-cta + .cta-trust, .center .cta-trust { justify-content: center; }
+.cta-trust::before { content: "✓"; color: var(--green-500); font-weight: 700; }
+.bg-green .cta-trust { color: var(--green-100); }
+.bg-green .cta-trust::before { color: var(--amber); }
+
+/* ---- Before / after feeling strip ---- */
+.ba-grid { display: grid; grid-template-columns: 1fr auto 1fr; gap: 22px; align-items: stretch; }
+.ba-col { border-radius: 20px; padding: 30px 28px; border: 1px solid var(--line); }
+.ba-col.before { background: var(--white); }
+.ba-col.after {
+  background: linear-gradient(160deg, var(--green-700), var(--green-900));
+  color: var(--cream); border-color: transparent; box-shadow: var(--shadow);
+}
+.ba-col h3 { font-size: 1.15rem; margin-bottom: 16px; }
+.ba-col.after h3 { color: var(--white); }
+.ba-col ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 13px; }
+.ba-col li { padding-left: 28px; position: relative; color: var(--ink-soft); }
+.ba-col.after li { color: var(--green-100); }
+.ba-col.before li::before { content: "✕"; position: absolute; left: 0; color: var(--muted); font-weight: 700; }
+.ba-col.after li::before { content: "✓"; position: absolute; left: 0; color: var(--amber); font-weight: 700; }
+.ba-arrow { display: flex; align-items: center; justify-content: center; font-size: 1.7rem; color: var(--amber-deep); }
+@media (max-width: 760px) {
+  .ba-grid { grid-template-columns: 1fr; gap: 16px; }
+  .ba-arrow { transform: rotate(90deg); padding: 2px 0; }
+}
