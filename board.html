@@ -410,6 +410,14 @@
       user-select: none;
       margin-bottom: 14px;
     }
+    /* steady.css gives all inputs width:100% + padding — undo that for checkboxes */
+    .blocked-toggle input, .arch-toggle input {
+      width: 16px;
+      height: 16px;
+      padding: 0;
+      margin: 0;
+      flex: 0 0 auto;
+    }
     .blocked-toggle input { accent-color: #b3423a; }
 
     /* Notes */
