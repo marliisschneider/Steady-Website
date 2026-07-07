@@ -306,11 +306,11 @@
       background: var(--offwhite);
       border-radius: var(--radius);
       box-shadow: 0 24px 60px rgba(16, 40, 30, 0.3);
-      max-width: 720px;
+      max-width: 940px;
       width: 100%;
       max-height: 90vh;
       overflow: auto;
-      padding: 26px;
+      padding: 24px 28px;
     }
     .modal-head {
       display: flex;
@@ -338,15 +338,15 @@
       background: transparent !important;
       border-color: transparent !important;
       padding: 6px 10px !important;
-      margin: 0 -10px 14px;
+      margin: 0 -10px 10px;
       width: calc(100% + 20px) !important;
     }
     .modal-title-input:hover { border-color: var(--line) !important; }
     .modal-title-input:focus { background: var(--white) !important; }
     .modal-cols {
       display: grid;
-      grid-template-columns: 1.5fr 1fr;
-      gap: 26px;
+      grid-template-columns: 1.6fr 1fr;
+      gap: 34px;
       align-items: start;
     }
     .section-head, .mini h4 {
@@ -358,13 +358,13 @@
       color: var(--muted);
       margin: 0 0 6px;
     }
-    .section-head { margin-top: 18px; }
+    .section-head { margin-top: 14px; }
     .modal-side .section-head { margin-top: 0; }
     .mini-grid {
       display: grid;
       grid-template-columns: 1fr 1fr;
-      gap: 14px;
-      margin-bottom: 14px;
+      gap: 12px 16px;
+      margin-bottom: 4px;
     }
     .owner-line { display: flex; align-items: center; gap: 8px; }
     .owner-line .owner-avatar { margin-left: 0; width: 30px; height: 30px; font-size: 0.72rem; }
@@ -382,8 +382,8 @@
     .modal-close:hover { background: var(--cream); color: var(--green-800); }
     .modal .field { margin-bottom: 14px; }
     .modal .field label { color: var(--ink-soft); }
-    .modal input, .modal textarea, .modal select { width: 100%; }
-    .modal textarea { min-height: 80px; resize: vertical; }
+    .modal input, .modal textarea, .modal select { width: 100%; padding: 9px 12px; font-size: 0.92rem; }
+    .modal textarea { min-height: 72px; resize: vertical; }
     .modal-row { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
     .quick-due { display: flex; gap: 6px; margin-top: 6px; flex-wrap: wrap; }
     .quick-due button {
@@ -400,15 +400,16 @@
     .quick-due button:hover { background: var(--green-200); }
     .blocked-toggle {
       font-family: var(--sans);
-      font-size: 0.9rem;
+      font-size: 0.85rem;
       font-weight: 550;
       color: #b3423a;
-      display: inline-flex;
+      display: flex;
       align-items: center;
       gap: 8px;
       cursor: pointer;
       user-select: none;
-      margin-bottom: 14px;
+      margin-top: 10px;
+      white-space: nowrap;
     }
     /* steady.css gives all inputs width:100% + padding — undo that for checkboxes */
     .blocked-toggle input, .arch-toggle input {
@@ -458,7 +459,7 @@
       font-size: 0.8rem;
       color: var(--muted);
       min-height: 1.3em;
-      margin: 4px 0 10px;
+      margin: 10px 0 8px;
     }
     .modal-status.err { color: #b3423a; }
     .modal-foot {
@@ -466,7 +467,7 @@
       justify-content: space-between;
       align-items: center;
       border-top: 1px solid var(--line);
-      padding-top: 16px;
+      padding-top: 12px;
     }
     .btn-danger {
       font-family: var(--sans);
@@ -690,9 +691,9 @@
                 <option value="medium">Medium</option>
                 <option value="high">High</option>
               </select>
+              <label class="blocked-toggle"><input type="checkbox" id="m-blocked"> Blocked</label>
             </div>
           </div>
-          <label class="blocked-toggle"><input type="checkbox" id="m-blocked"> Blocked — waiting on something</label>
           <h4 class="section-head">Description</h4>
           <textarea id="m-description" maxlength="600" placeholder="Add a more detailed description…" aria-label="Description"></textarea>
         </div>
