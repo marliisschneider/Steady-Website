@@ -69,8 +69,43 @@
     });
   }
 
+  // --- Scroll reveal (progressive enhancement) ---------------------------
+  function setupReveal() {
+    try {
+      var reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      if (reduce || !("IntersectionObserver" in window)) return;
+
+      var sel = ".section-head, .cause-card, .card, .program, .step, .tl-item, " +
+                ".principle, .feature-card, .quote, .stat, .callout, .form-band, " +
+                ".gallery img, .coach-band > div, .story-figure, .quiz-card, .fit-col";
+      var nodes = [].slice.call(document.querySelectorAll(sel));
+      if (!nodes.length) return;
+
+      var vh = window.innerHeight || document.documentElement.clientHeight;
+      var observed = [];
+      nodes.forEach(function (el) {
+        // Don't hide anything already in view — avoids any flash-of-hidden.
+        if (el.getBoundingClientRect().top < vh * 0.92) return;
+        el.classList.add("reveal");
+        observed.push(el);
+      });
+      if (!observed.length) return;
+
+      var io = new IntersectionObserver(function (entries) {
+        entries.forEach(function (e) {
+          if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); }
+        });
+      }, { rootMargin: "0px 0px -8% 0px", threshold: 0.08 });
+      observed.forEach(function (el) { io.observe(el); });
+
+      // Safety net: never leave anything hidden.
+      setTimeout(function () { observed.forEach(function (el) { el.classList.add("in"); }); }, 1800);
+    } catch (e) { /* content stays visible on any error */ }
+  }
+
   // --- Init --------------------------------------------------------------
   document.addEventListener("DOMContentLoaded", function () {
     document.querySelectorAll("[data-lead-form]").forEach(wireForm);
+    setupReveal();
   });
 })();

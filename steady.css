@@ -914,3 +914,111 @@ textarea { resize: vertical; min-height: 130px; }
   .form-row { grid-template-columns: 1fr; }
   .footer-grid { grid-template-columns: 1fr; gap: 28px; }
 }
+
+/* ============================================================
+   VISUAL REFRESH — warmth, depth & motion (layered last)
+   ============================================================ */
+:root {
+  --amber: #d99a4e;
+  --amber-deep: #bd7f36;
+  --amber-soft: #f7ecd8;
+  --shadow: 0 2px 6px rgba(16, 40, 30, 0.05), 0 22px 50px rgba(16, 40, 30, 0.13);
+  --shadow-sm: 0 1px 3px rgba(16, 40, 30, 0.06), 0 8px 22px rgba(16, 40, 30, 0.07);
+  --shadow-glow: 0 12px 30px rgba(189, 127, 54, 0.30);
+}
+
+/* ---- Motion ---- */
+@keyframes riseIn { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: none; } }
+.reveal { opacity: 0; transform: translateY(22px); transition: opacity 0.7s ease, transform 0.8s cubic-bezier(0.2, 0.7, 0.2, 1); will-change: opacity, transform; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) {
+  .reveal { opacity: 1 !important; transform: none !important; }
+  *, *::before, *::after { animation-duration: 0.001ms !important; transition-duration: 0.001ms !important; }
+}
+
+/* ---- Eyebrow: warm accent lead ---- */
+.eyebrow { display: inline-flex; align-items: center; gap: 10px; color: var(--amber-deep); }
+.eyebrow::before { content: ""; width: 22px; height: 2px; border-radius: 2px; background: linear-gradient(90deg, var(--amber), rgba(217, 154, 78, 0)); }
+.article-hero .eyebrow, .bg-green .eyebrow { color: var(--amber); }
+
+/* ---- Emphasis type ---- */
+h1 em, h2 em, .lede em { font-style: italic; color: var(--amber-deep); }
+.article-hero .lede em, .bg-green .lede em { color: var(--amber); }
+h1 { letter-spacing: -0.022em; }
+
+/* ---- Buttons: tactile ---- */
+.btn { transition: transform 0.2s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.25s ease, background 0.25s ease, color 0.2s ease; }
+.btn-primary { background: linear-gradient(180deg, var(--green-600), var(--green-800)); box-shadow: 0 8px 22px rgba(20, 53, 42, 0.26); }
+.btn-primary:hover { transform: translateY(-2px); box-shadow: 0 15px 34px rgba(20, 53, 42, 0.34); }
+.btn-ghost:hover { transform: translateY(-2px); }
+.btn-accent { background: linear-gradient(180deg, var(--amber), var(--amber-deep)); color: #fff; box-shadow: var(--shadow-glow); }
+.btn-accent:hover { transform: translateY(-2px); color: #fff; filter: saturate(1.06) brightness(1.03); }
+
+/* ---- Hero: warmer, layered, animated ---- */
+.hero {
+  background:
+    radial-gradient(55% 75% at 88% 6%, rgba(217, 154, 78, 0.20), transparent 60%),
+    radial-gradient(80% 90% at -5% 108%, rgba(64, 145, 108, 0.13), transparent 55%),
+    linear-gradient(180deg, var(--cream) 0%, var(--offwhite) 100%);
+}
+.hero-inner > div:first-child > * { animation: riseIn 0.75s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+.hero-inner > div:first-child > *:nth-child(2) { animation-delay: 0.08s; }
+.hero-inner > div:first-child > *:nth-child(3) { animation-delay: 0.16s; }
+.hero-inner > div:first-child > *:nth-child(4) { animation-delay: 0.24s; }
+.hero-inner > div:first-child > *:nth-child(5) { animation-delay: 0.32s; }
+.hero-inner > div:first-child > *:nth-child(6) { animation-delay: 0.40s; }
+.hero-art { animation: riseIn 0.85s 0.2s cubic-bezier(0.2, 0.7, 0.2, 1) both; }
+
+/* ---- Hero credibility badges ---- */
+.hero-badges { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 1.5rem; }
+.hero-badges span {
+  font-family: var(--sans); font-size: 0.82rem; font-weight: 600; color: var(--green-800);
+  background: rgba(255, 255, 255, 0.72); border: 1px solid var(--line);
+  padding: 8px 15px; border-radius: 100px; backdrop-filter: blur(6px);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.hero-badges span::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); flex: 0 0 auto; }
+
+/* ---- Cards: depth, lift, accent ---- */
+.card, .cause-card, .program, .feature-card, .quiz-card, .form-card { border-radius: 20px; }
+.cause-card { transition: transform 0.24s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.24s ease, border-color 0.24s ease; overflow: hidden; }
+.card:hover, .cause-card:hover { transform: translateY(-6px); box-shadow: var(--shadow); }
+.cause-card::after {
+  content: ""; position: absolute; left: 0; right: 0; bottom: 0; height: 3px;
+  background: linear-gradient(90deg, var(--amber), var(--green-400));
+  transform: scaleX(0); transform-origin: left; transition: transform 0.32s ease;
+}
+.cause-card:hover::after { transform: scaleX(1); }
+.cause-card .num { color: var(--amber-deep); }
+.card-tag { color: var(--amber-deep); }
+
+/* ---- Steps & timeline ---- */
+.step-num { background: linear-gradient(150deg, var(--green-600), var(--green-800)); box-shadow: 0 6px 16px rgba(20, 53, 42, 0.24); }
+.tl-item::before { background: var(--amber); box-shadow: 0 0 0 4px var(--offwhite), 0 0 0 6px var(--amber-soft); }
+.tl-phase { color: var(--amber-deep); background: var(--amber-soft); }
+
+/* ---- Callout: warmer ---- */
+.callout { border-left-color: var(--amber); background: linear-gradient(180deg, var(--amber-soft), var(--cream)); }
+.callout .callout-label { color: var(--amber-deep); }
+
+/* ---- Nav polish ---- */
+.nav-links a { position: relative; }
+.nav-links a:not(.cta)::after {
+  content: ""; position: absolute; left: 14px; right: 14px; bottom: 3px; height: 2px;
+  background: var(--amber); border-radius: 2px; transform: scaleX(0); transform-origin: left; transition: transform 0.25s ease;
+}
+.nav-links a:not(.cta):hover::after { transform: scaleX(1); }
+.nav-links a.cta { background: linear-gradient(180deg, var(--green-600), var(--green-800)); box-shadow: 0 6px 16px rgba(20, 53, 42, 0.25); }
+.nav-links a.cta:hover { transform: translateY(-1px); }
+
+/* ---- Gallery hover ---- */
+.gallery img { transition: transform 0.3s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.3s ease; }
+.gallery img:hover { transform: scale(1.03); box-shadow: var(--shadow); }
+
+/* ---- Stat numbers ---- */
+.stat .num { color: var(--amber-deep); }
+.bg-green .stat .num { color: var(--amber); }
+
+/* ---- Article body: warm link + first-letter feel ---- */
+.article .narrow > p a { color: var(--amber-deep); font-weight: 600; }
+.article .narrow > p a:hover { color: var(--green-800); }
