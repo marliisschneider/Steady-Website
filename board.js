@@ -15,7 +15,7 @@
   var ICONS = {
     archive: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M10 12h4"/></svg>',
     restore: '<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V8"/><path d="M12 17v-4"/><path d="M9.5 15.5 12 13l2.5 2.5"/></svg>',
-    calendar: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4M16 3v4M3 10h18"/></svg>',
+    clock: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg>',
     note: '<svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>'
   };
 
@@ -329,21 +329,32 @@
       card.appendChild(actions);
     }
 
-    var h = document.createElement("h3");
-    var dot = document.createElement("span");
-    dot.className = "dot-priority p-" + (PRIORITY_RANK.hasOwnProperty(task.priority) ? task.priority : "medium");
-    h.appendChild(dot);
-    h.appendChild(document.createTextNode((task.title || "Untitled").trim()));
-    card.appendChild(h);
-
-    if (task.description) {
-      var p = document.createElement("p");
-      p.textContent = task.description;
-      card.appendChild(p);
+    // Trello-style label strips: category color, plus red for high priority
+    if (task.category || task.priority === "high") {
+      var strips = document.createElement("div");
+      strips.className = "card-strips";
+      if (task.priority === "high") {
+        var pStrip = document.createElement("span");
+        pStrip.className = "strip p-high";
+        pStrip.title = "High priority";
+        strips.appendChild(pStrip);
+      }
+      if (task.category) {
+        var cStrip = document.createElement("span");
+        cStrip.className = "strip " + catClass(task.category);
+        cStrip.title = task.category;
+        strips.appendChild(cStrip);
+      }
+      card.appendChild(strips);
     }
 
+    var h = document.createElement("h3");
+    h.textContent = (task.title || "Untitled").trim();
+    card.appendChild(h);
+
+    // description intentionally not shown on the card — open it to read
     var notes = taskNotes(task);
-    if (task.category || task.due_date || task.owner || task.blocked || notes.length) {
+    if (task.due_date || task.owner || task.blocked || notes.length) {
       var meta = document.createElement("div");
       meta.className = "card-meta";
       if (task.blocked) {
@@ -352,17 +363,11 @@
         flag.textContent = "Blocked";
         meta.appendChild(flag);
       }
-      if (task.category) {
-        var chip = document.createElement("span");
-        chip.className = "chip " + catClass(task.category);
-        chip.textContent = task.category;
-        meta.appendChild(chip);
-      }
       if (task.due_date) {
         var due = document.createElement("span");
         due.className = "due" + (isOverdue(task) ? " overdue" : "");
-        due.innerHTML = ICONS.calendar;
-        due.appendChild(document.createTextNode(" " + fmtDate(task.due_date) + (isOverdue(task) ? " · overdue" : "")));
+        due.innerHTML = ICONS.clock;
+        due.appendChild(document.createTextNode(" " + fmtDate(task.due_date)));
         meta.appendChild(due);
       }
       if (notes.length) {
@@ -440,6 +445,14 @@
       if (field === "priority") val = val || "medium";
       input.value = val || "";
     });
+    var statusSel = modalInput("status");
+    if (!(skipFocused && document.activeElement === statusSel)) {
+      statusSel.value = COLUMNS.indexOf(task.status) !== -1 ? task.status : "todo";
+    }
+    var avatar = document.getElementById("m-owner-avatar");
+    avatar.hidden = !task.owner;
+    avatar.textContent = task.owner ? initials(task.owner) : "";
+    avatar.title = task.owner || "";
     blockedToggle.checked = !!task.blocked;
     renderNotes(task);
   }
@@ -448,7 +461,10 @@
     var notes = taskNotes(task);
     notesListEl.textContent = "";
     notesEmptyEl.hidden = !!notes.length;
-    notes.forEach(function (note, idx) {
+    // newest first, like Trello's activity feed; idx stays the index in the stored array
+    var ordered = notes.map(function (note, idx) { return { note: note, idx: idx }; }).reverse();
+    ordered.forEach(function (entry) {
+      var note = entry.note, idx = entry.idx;
       var li = document.createElement("li");
       var date = document.createElement("span");
       date.className = "note-date";
@@ -542,9 +558,31 @@
       fillModal(task, true);
       setModalStatus("Couldn't save: " + error.message, true);
     }).then(function (res) {
-      if (res && !res.error) setModalStatus("Saved ✓", false);
+      if (res && !res.error) {
+        setModalStatus("Saved ✓", false);
+        if (field === "owner") {
+          var avatar = document.getElementById("m-owner-avatar");
+          avatar.hidden = !task.owner;
+          avatar.textContent = task.owner ? initials(task.owner) : "";
+          avatar.title = task.owner || "";
+        }
+      }
     });
   }
+
+  // status chip in the modal header moves the card between columns
+  modalInput("status").addEventListener("change", function () {
+    var task = tasks.get(openTaskId);
+    if (!task || this.value === task.status) return;
+    setModalStatus("Saving…", false);
+    var sel = this;
+    saveTask(task, { status: sel.value }, function (error) {
+      sel.value = task.status;
+      setModalStatus("Couldn't save: " + error.message, true);
+    }).then(function (res) {
+      if (res && !res.error) setModalStatus("Saved ✓", false);
+    });
+  });
 
   MODAL_FIELDS.forEach(function (field) {
     var input = modalInput(field);
@@ -638,6 +676,46 @@
       col.classList.remove("drag-over");
       var task = tasks.get(e.dataTransfer.getData("text/plain"));
       if (task) moveTask(task, col.dataset.status);
+    });
+
+    // Trello-style "+ Add a card" at the foot of each column
+    var addBtn = col.querySelector(".col-add");
+    var addForm = col.querySelector(".col-add-form");
+    var addInput = addForm.querySelector("input");
+
+    function closeQuickAdd() {
+      addForm.hidden = true;
+      addBtn.hidden = false;
+      addInput.value = "";
+    }
+
+    addBtn.addEventListener("click", function () {
+      addBtn.hidden = true;
+      addForm.hidden = false;
+      addInput.focus();
+    });
+    addInput.addEventListener("keydown", function (e) {
+      if (e.key === "Escape") { e.stopPropagation(); closeQuickAdd(); }
+    });
+    addInput.addEventListener("blur", function () {
+      if (!addInput.value.trim()) closeQuickAdd();
+    });
+    addForm.addEventListener("submit", function (e) {
+      e.preventDefault();
+      var title = addInput.value.trim();
+      if (!title) { closeQuickAdd(); return; }
+      client.from("tasks").insert({ title: title, status: col.dataset.status }).select().single().then(function (res) {
+        if (res.error) {
+          console.error("Steady board: insert failed", res.error);
+          setMsg("Couldn't add that task — please try again.", "err");
+          return;
+        }
+        tasks.set(res.data.id, res.data);
+        popId = res.data.id;
+        render();
+        addInput.value = "";
+        addInput.focus(); // keep adding
+      });
     });
   });
 

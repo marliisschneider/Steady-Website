@@ -76,15 +76,15 @@
       position: relative;
       background: var(--white);
       border: 1px solid var(--line);
-      border-left: 4px solid var(--green-500);
       border-radius: 10px;
-      padding: 14px 60px 14px 16px;
+      padding: 12px 14px;
       cursor: grab;
       text-align: left;
       width: 100%;
       font: inherit;
       transition: transform 0.12s ease, box-shadow 0.12s ease, opacity 0.12s ease;
     }
+    .col.is-done .card { padding-right: 44px; } /* room for the archive icon */
     .card:hover {
       transform: translateY(-2px);
       box-shadow: 0 6px 18px rgba(16, 40, 30, 0.10);
@@ -93,9 +93,7 @@
     .card.is-moving { opacity: 0.45; pointer-events: none; }
     .card.is-dragging { opacity: 0.45; cursor: grabbing; }
     .card.is-archived { opacity: 0.55; }
-    .card.is-blocked { border-left-color: #b3423a; }
-    .col.is-backlog .card { border-left-color: var(--green-200); }
-    .col.is-backlog .card.is-blocked { border-left-color: #b3423a; }
+    .card.is-blocked { border-color: #dcaaa2; }
     .col.drag-over {
       background: var(--green-100);
       border-color: var(--green-400);
@@ -107,34 +105,18 @@
     .card-pop { animation: card-pop 0.28s ease; }
     .card h3 {
       font-family: var(--serif);
-      font-size: 1.05rem;
+      font-size: 1.02rem;
       font-weight: 550;
       color: var(--green-900);
-      margin: 0 0 4px;
+      margin: 0;
       line-height: 1.3;
     }
-    .card p {
-      font-family: var(--sans);
-      font-size: 0.86rem;
-      color: var(--muted);
-      margin: 0;
-      line-height: 1.5;
-    }
-    .col.is-done .card { border-left-color: var(--green-200); }
     .col.is-done .card h3 { color: var(--muted); text-decoration: line-through; text-decoration-thickness: 1px; }
 
-    /* Card extras */
-    .dot-priority {
-      display: inline-block;
-      width: 9px; height: 9px;
-      border-radius: 50%;
-      margin-right: 8px;
-      vertical-align: 1px;
-      flex: 0 0 auto;
-    }
-    .p-high { background: #b3423a; }
-    .p-medium { background: var(--gold); }
-    .p-low { background: #9aa8a0; }
+    /* Card extras — Trello-style label strips, no description on the card */
+    .card-strips { display: flex; gap: 4px; margin-bottom: 8px; }
+    .strip { width: 40px; height: 8px; border-radius: 4px; }
+    .strip.p-high { background: #b3423a; }
     .card-meta {
       display: flex;
       flex-wrap: wrap;
@@ -142,6 +124,7 @@
       gap: 8px;
       margin-top: 10px;
     }
+    .card-meta:empty { display: none; }
     .chip {
       font-family: var(--sans);
       font-size: 0.72rem;
@@ -159,6 +142,14 @@
     .cat-5 { background: #d9ecec; color: #2f7373; }
     .cat-6 { background: #f0e8d8; color: #7a6a3a; }
     .cat-7 { background: #e4e8e0; color: #5a6a55; }
+    .strip.cat-0 { background: var(--green-500); }
+    .strip.cat-1 { background: #c98a3a; }
+    .strip.cat-2 { background: #3d5a9e; }
+    .strip.cat-3 { background: #a04848; }
+    .strip.cat-4 { background: #6a4e9e; }
+    .strip.cat-5 { background: #2f7373; }
+    .strip.cat-6 { background: #7a6a3a; }
+    .strip.cat-7 { background: #5a6a55; }
     .chip-blocked { background: #f5dcd8; color: #b3423a; }
     .due, .note-count {
       font-family: var(--sans);
@@ -168,7 +159,13 @@
       align-items: center;
       gap: 5px;
     }
-    .due.overdue { color: #b3423a; font-weight: 600; }
+    .due.overdue {
+      color: var(--white);
+      background: #b3423a;
+      border-radius: 4px;
+      padding: 2px 7px;
+      font-weight: 600;
+    }
     .owner-avatar {
       margin-left: auto;
       width: 22px; height: 22px;
@@ -274,6 +271,7 @@
     .task-form .field label { color: var(--ink-soft); }
     .task-form input,
     .board-toolbar input[type="search"],
+    .col-add-form input,
     .modal input, .modal textarea, .modal select {
       font-family: var(--sans);
       font-size: 0.95rem;
@@ -285,6 +283,7 @@
     }
     .task-form input:focus,
     .board-toolbar input[type="search"]:focus,
+    .col-add-form input:focus,
     .modal input:focus, .modal textarea:focus, .modal select:focus {
       outline: none;
       border-color: var(--green-500);
@@ -307,7 +306,7 @@
       background: var(--offwhite);
       border-radius: var(--radius);
       box-shadow: 0 24px 60px rgba(16, 40, 30, 0.3);
-      max-width: 560px;
+      max-width: 720px;
       width: 100%;
       max-height: 90vh;
       overflow: auto;
@@ -317,15 +316,59 @@
       display: flex;
       align-items: center;
       justify-content: space-between;
-      margin-bottom: 18px;
+      margin-bottom: 12px;
     }
-    .modal-head h2 {
-      font-family: var(--serif);
-      font-size: 1.4rem;
+    .status-chip {
+      font-family: var(--sans);
+      font-size: 0.82rem;
+      font-weight: 650;
+      color: var(--green-800);
+      background: var(--green-100);
+      border: none;
+      border-radius: 8px;
+      padding: 7px 10px;
+      cursor: pointer;
+      width: auto !important;
+    }
+    .modal-title-input {
+      font-family: var(--serif) !important;
+      font-size: 1.5rem !important;
       font-weight: 550;
-      color: var(--green-900);
-      margin: 0;
+      color: var(--green-900) !important;
+      background: transparent !important;
+      border-color: transparent !important;
+      padding: 6px 10px !important;
+      margin: 0 -10px 14px;
+      width: calc(100% + 20px) !important;
     }
+    .modal-title-input:hover { border-color: var(--line) !important; }
+    .modal-title-input:focus { background: var(--white) !important; }
+    .modal-cols {
+      display: grid;
+      grid-template-columns: 1.5fr 1fr;
+      gap: 26px;
+      align-items: start;
+    }
+    .section-head, .mini h4 {
+      font-family: var(--sans);
+      font-size: 0.7rem;
+      font-weight: 650;
+      letter-spacing: 0.07em;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin: 0 0 6px;
+    }
+    .section-head { margin-top: 18px; }
+    .modal-side .section-head { margin-top: 0; }
+    .mini-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 14px;
+      margin-bottom: 14px;
+    }
+    .owner-line { display: flex; align-items: center; gap: 8px; }
+    .owner-line .owner-avatar { margin-left: 0; width: 30px; height: 30px; font-size: 0.72rem; }
+    .owner-line input { flex: 1; min-width: 0; }
     .modal-close {
       background: none;
       border: none;
@@ -398,7 +441,7 @@
     }
     .note-del:hover { background: var(--cream); color: #b3423a; }
     .notes-empty { font-family: var(--sans); font-size: 0.82rem; color: var(--muted); margin: 0 0 10px; }
-    .note-add { display: flex; gap: 8px; }
+    .note-add { display: flex; gap: 8px; margin-bottom: 10px; }
     .note-add input { flex: 1; }
     .note-add .btn { padding: 10px 18px; white-space: nowrap; }
 
@@ -431,6 +474,25 @@
     }
     .btn-danger:hover { background: #b3423a; border-color: #b3423a; color: var(--white); }
 
+    /* Per-column quick add */
+    .col-add {
+      width: 100%;
+      font-family: var(--sans);
+      font-size: 0.85rem;
+      font-weight: 550;
+      color: var(--muted);
+      background: none;
+      border: none;
+      border-radius: 8px;
+      padding: 8px 10px;
+      margin-top: 10px;
+      text-align: left;
+      cursor: pointer;
+    }
+    .col-add:hover { background: var(--offwhite); color: var(--green-800); }
+    .col-add-form { margin-top: 10px; }
+    .col-add-form input { width: 100%; }
+
     .col-empty {
       font-family: var(--sans);
       font-size: 0.85rem;
@@ -457,7 +519,7 @@
       .board-toolbar { flex-wrap: wrap; }
       .board-toolbar input[type="search"] { flex-basis: 100%; }
       .modal { padding: 20px; }
-      .modal-row { grid-template-columns: 1fr; }
+      .modal-row, .modal-cols, .mini-grid { grid-template-columns: 1fr; }
     }
   </style>
 </head>
@@ -518,6 +580,10 @@
             </select>
           </div>
           <div class="cards"></div>
+          <button type="button" class="col-add">+ Add a card</button>
+          <form class="col-add-form" hidden>
+            <input type="text" placeholder="Enter a title…" maxlength="120" autocomplete="off" aria-label="New card title">
+          </form>
         </div>
         <div class="col" data-status="todo">
           <div class="col-head">
@@ -529,6 +595,10 @@
             </select>
           </div>
           <div class="cards"></div>
+          <button type="button" class="col-add">+ Add a card</button>
+          <form class="col-add-form" hidden>
+            <input type="text" placeholder="Enter a title…" maxlength="120" autocomplete="off" aria-label="New card title">
+          </form>
         </div>
         <div class="col" data-status="in_progress">
           <div class="col-head">
@@ -540,6 +610,10 @@
             </select>
           </div>
           <div class="cards"></div>
+          <button type="button" class="col-add">+ Add a card</button>
+          <form class="col-add-form" hidden>
+            <input type="text" placeholder="Enter a title…" maxlength="120" autocomplete="off" aria-label="New card title">
+          </form>
         </div>
         <div class="col is-done" data-status="done">
           <div class="col-head">
@@ -551,6 +625,10 @@
             </select>
           </div>
           <div class="cards"></div>
+          <button type="button" class="col-add">+ Add a card</button>
+          <form class="col-add-form" hidden>
+            <input type="text" placeholder="Enter a title…" maxlength="120" autocomplete="off" aria-label="New card title">
+          </form>
         </div>
       </div>
       <p class="board-hint" id="board-hint" hidden>Drag cards between columns to move them. Click a card to edit it, or press <strong>N</strong> to add a task.</p>
@@ -558,61 +636,66 @@
     </div>
   </section>
 
-  <!-- Edit modal -->
+  <!-- Edit modal (Trello-style) -->
   <div class="modal-overlay" id="modal-overlay" hidden>
-    <div class="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title">
+    <div class="modal" role="dialog" aria-modal="true" aria-label="Edit task">
       <div class="modal-head">
-        <h2 id="modal-title">Edit task</h2>
+        <select id="m-status" class="status-chip" aria-label="Column">
+          <option value="backlog">Backlog</option>
+          <option value="todo">To Do</option>
+          <option value="in_progress">In Progress</option>
+          <option value="done">Done</option>
+        </select>
         <button type="button" class="modal-close" id="modal-close" aria-label="Close">×</button>
       </div>
-      <div class="field">
-        <label for="m-title">Title</label>
-        <input id="m-title" type="text" maxlength="120" autocomplete="off">
-      </div>
-      <div class="field">
-        <label for="m-description">Description</label>
-        <textarea id="m-description" maxlength="600"></textarea>
-      </div>
-      <div class="modal-row">
-        <div class="field">
-          <label for="m-priority">Priority</label>
-          <select id="m-priority">
-            <option value="low">Low</option>
-            <option value="medium">Medium</option>
-            <option value="high">High</option>
-          </select>
-        </div>
-        <div class="field">
-          <label for="m-due_date">Due date</label>
-          <input id="m-due_date" type="date">
-          <div class="quick-due">
-            <button type="button" data-days="0">Today</button>
-            <button type="button" data-days="1">Tomorrow</button>
-            <button type="button" data-days="7">Next week</button>
-            <button type="button" data-days="clear">Clear</button>
+      <input id="m-title" class="modal-title-input" type="text" maxlength="120" autocomplete="off" aria-label="Title" placeholder="Task title">
+      <div class="modal-cols">
+        <div class="modal-main">
+          <div class="mini-grid">
+            <div class="mini">
+              <h4>Owner</h4>
+              <div class="owner-line">
+                <span class="owner-avatar" id="m-owner-avatar" hidden></span>
+                <input id="m-owner" type="text" list="owner-list" placeholder="Who's on it?" maxlength="40" autocomplete="off" aria-label="Owner">
+                <datalist id="owner-list"></datalist>
+              </div>
+            </div>
+            <div class="mini">
+              <h4>Label</h4>
+              <input id="m-category" type="text" list="category-list" placeholder="e.g. Website, SEO" maxlength="40" autocomplete="off" aria-label="Label">
+              <datalist id="category-list"></datalist>
+            </div>
+            <div class="mini">
+              <h4>Due date</h4>
+              <input id="m-due_date" type="date" aria-label="Due date">
+              <div class="quick-due">
+                <button type="button" data-days="0">Today</button>
+                <button type="button" data-days="1">Tomorrow</button>
+                <button type="button" data-days="7">Next week</button>
+                <button type="button" data-days="clear">Clear</button>
+              </div>
+            </div>
+            <div class="mini">
+              <h4>Priority</h4>
+              <select id="m-priority" aria-label="Priority">
+                <option value="low">Low</option>
+                <option value="medium">Medium</option>
+                <option value="high">High</option>
+              </select>
+            </div>
           </div>
+          <label class="blocked-toggle"><input type="checkbox" id="m-blocked"> Blocked — waiting on something</label>
+          <h4 class="section-head">Description</h4>
+          <textarea id="m-description" maxlength="600" placeholder="Add a more detailed description…" aria-label="Description"></textarea>
         </div>
-      </div>
-      <div class="modal-row">
-        <div class="field">
-          <label for="m-category">Category</label>
-          <input id="m-category" type="text" list="category-list" placeholder="e.g. Website, Marketing" maxlength="40" autocomplete="off">
-          <datalist id="category-list"></datalist>
-        </div>
-        <div class="field">
-          <label for="m-owner">Owner</label>
-          <input id="m-owner" type="text" list="owner-list" placeholder="Who's on it?" maxlength="40" autocomplete="off">
-          <datalist id="owner-list"></datalist>
-        </div>
-      </div>
-      <label class="blocked-toggle"><input type="checkbox" id="m-blocked"> Blocked — waiting on something</label>
-      <div class="field">
-        <label for="m-note-input">Progress notes</label>
-        <ul class="notes-list" id="m-notes"></ul>
-        <p class="notes-empty" id="m-notes-empty">No notes yet — add updates as you go.</p>
-        <div class="note-add">
-          <input id="m-note-input" type="text" placeholder="Add a note…" maxlength="300" autocomplete="off">
-          <button type="button" class="btn btn-ghost" id="m-note-add">Add</button>
+        <div class="modal-side">
+          <h4 class="section-head">Comments and activity</h4>
+          <div class="note-add">
+            <input id="m-note-input" type="text" placeholder="Write a comment…" maxlength="300" autocomplete="off">
+            <button type="button" class="btn btn-ghost" id="m-note-add">Add</button>
+          </div>
+          <ul class="notes-list" id="m-notes"></ul>
+          <p class="notes-empty" id="m-notes-empty">No activity yet.</p>
         </div>
       </div>
       <p class="modal-status" id="modal-status">Changes save automatically</p>
