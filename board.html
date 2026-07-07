@@ -518,6 +518,57 @@
       margin-top: 18px;
       text-align: center;
     }
+    /* --- Board on green: the whole board sits on a forest-green band ------ */
+    section.board-band {
+      background: linear-gradient(180deg, var(--green-700), var(--green-900));
+      padding: 44px 0 80px;
+    }
+    .task-form {
+      border: none;
+      box-shadow: 0 16px 40px rgba(0, 0, 0, 0.22);
+    }
+    .board-toolbar input[type="search"] {
+      background: rgba(255, 255, 255, 0.1);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: var(--white);
+    }
+    .board-toolbar input[type="search"]::placeholder { color: var(--green-200); }
+    .board-toolbar input[type="search"]:focus {
+      background: rgba(255, 255, 255, 0.16);
+      border-color: var(--green-200);
+      box-shadow: 0 0 0 3px rgba(183, 212, 197, 0.25);
+    }
+    .arch-toggle { color: var(--green-100); }
+    .filter-label { color: var(--green-200); }
+    .filter-chip {
+      background: rgba(255, 255, 255, 0.08);
+      border-color: rgba(255, 255, 255, 0.22);
+      color: var(--green-100);
+    }
+    .filter-chip:hover { border-color: var(--white); color: var(--white); }
+    .filter-chip.active {
+      background: var(--cream);
+      border-color: var(--cream);
+      color: var(--green-800);
+    }
+    .filter-sep { background: rgba(255, 255, 255, 0.25); }
+    .col {
+      border: none;
+      box-shadow: 0 12px 32px rgba(0, 0, 0, 0.18);
+    }
+    .col.drag-over {
+      background: var(--green-100);
+      outline: 2px dashed var(--green-500);
+      outline-offset: -2px;
+    }
+    .card {
+      border: 1px solid transparent;
+      box-shadow: 0 1px 3px rgba(16, 40, 30, 0.14);
+    }
+    .card:hover { box-shadow: 0 8px 22px rgba(16, 40, 30, 0.2); }
+    .card.is-blocked { border-color: #dcaaa2; }
+    .board-hint { color: var(--green-100); }
+
     @media (max-width: 1020px) {
       .board { grid-template-columns: 1fr 1fr; }
     }
@@ -557,7 +608,7 @@
     </div>
   </section>
 
-  <section>
+  <section class="board-band">
     <div class="wrap">
       <form class="task-form" id="task-form" hidden>
         <div class="field">
