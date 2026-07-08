@@ -20,5 +20,4 @@ Allow: /
 User-agent: Applebot-Extended
 Allow: /
 
-# Once your domain is live, add:
-# Sitemap: https://your-domain.com/sitemap.xml
+Sitemap: https://marliisschneider.github.io/Steady-Website/sitemap.xml
