@@ -1111,3 +1111,51 @@ body { background: var(--offwhite); }
 .tcard .who-meta strong { display: block; color: var(--green-900); font-weight: 650; }
 .tcard .who-meta span { font-size: 0.85rem; color: var(--muted); }
 @media (max-width: 760px) { .testi-grid { grid-template-columns: 1fr; } }
+
+/* ---- Hero: photo composition ---- */
+.hero-visual { display: grid; gap: 18px; }
+.hero-portrait { position: relative; width: 100%; max-width: 384px; margin: 0 auto; }
+.hero-portrait > img { width: 100%; height: auto; border-radius: 24px; box-shadow: var(--shadow); display: block; }
+.hero-portrait::before {
+  content: ""; position: absolute; inset: -20px -16px -10px -16px; z-index: -1; border-radius: 34px;
+  background: radial-gradient(58% 58% at 72% 18%, rgba(217, 154, 78, 0.30), transparent 70%);
+  filter: blur(8px);
+}
+.hero-portrait-badge {
+  position: absolute; left: -12px; bottom: 20px;
+  background: var(--white); border: 1px solid var(--line); border-radius: 100px;
+  padding: 9px 16px; box-shadow: var(--shadow);
+  font-family: var(--sans); font-size: 0.82rem; font-weight: 600; color: var(--green-900);
+  display: inline-flex; align-items: center; gap: 8px;
+}
+.status-dot { width: 9px; height: 9px; border-radius: 50%; background: #3ea06a; box-shadow: 0 0 0 3px rgba(62, 160, 106, 0.2); flex: 0 0 auto; }
+
+/* ---- The Steady Method ---- */
+.method-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.method-card {
+  background: var(--white); border: 1px solid var(--line); border-radius: 20px;
+  padding: 30px 28px; box-shadow: var(--shadow-sm); position: relative;
+  transition: transform 0.24s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.24s ease;
+}
+.method-card:hover { transform: translateY(-5px); box-shadow: var(--shadow); }
+.method-num { font-family: var(--serif); font-size: 2.4rem; color: var(--amber-deep); line-height: 1; display: block; }
+.method-phase { font-family: var(--serif); font-size: 1.55rem; color: var(--green-900); display: block; margin: 6px 0 8px; }
+.method-weeks {
+  display: inline-block; font-size: 0.72rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--green-600); background: var(--green-100); padding: 4px 11px; border-radius: 100px; margin-bottom: 16px;
+}
+.method-card p { color: var(--ink-soft); margin: 0; font-size: 0.98rem; }
+@media (max-width: 800px) { .method-grid { grid-template-columns: 1fr; } }
+
+/* ---- Topic icons (what we consult on) ---- */
+.topic-ico {
+  display: grid; place-items: center; width: 48px; height: 48px; border-radius: 14px;
+  background: var(--amber-soft); font-size: 1.45rem; margin-bottom: 15px;
+}
+
+/* ---- Online / availability note ---- */
+.avail-note {
+  display: inline-flex; align-items: center; gap: 9px; margin-top: 1.25rem;
+  font-size: 0.9rem; font-weight: 500; color: var(--green-800);
+  background: var(--green-100); border-radius: 100px; padding: 8px 16px;
+}
