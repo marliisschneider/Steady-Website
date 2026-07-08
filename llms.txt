@@ -5,7 +5,9 @@
 Founder and coach: Marliis Schneider - a former professional rower (national team at junior, U23, and elite level; NCAA Division I at USC) who resolved her own chronic inflammation and bloating by returning to whole foods, adding dairy back, and removing seed oils and ultra-processed food.
 
 ## Core pages
+- [Start Here](start-here.html): The best first path for new visitors — quiz, key guides, then book a call.
 - [Home](index.html): What Steady is and how to start.
+- [Journal](journal.html): Short notes, tips, and site updates.
 - [Coaching](coaching.html): The Steady Method, programs, and transparent pricing ($199/mo).
 - [About](about.html): Marliis Schneider's story and coaching philosophy.
 - [Learn library](learn.html): All educational guides in one place.
