@@ -979,6 +979,25 @@ h1 { letter-spacing: -0.022em; }
 }
 .hero-badges span::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--amber); flex: 0 0 auto; }
 
+/* ---- Hero "how it works" strip ---- */
+.how-strip { background: var(--white); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+.how-strip-inner {
+  display: flex; align-items: center; justify-content: center; flex-wrap: wrap;
+  gap: 12px 22px; padding: 18px 24px;
+  font-family: var(--sans); font-size: 0.96rem; font-weight: 500; color: var(--ink-soft);
+}
+.how-strip-step { display: inline-flex; align-items: center; gap: 10px; }
+.how-strip-step b {
+  display: grid; place-items: center; width: 24px; height: 24px; border-radius: 50%;
+  background: linear-gradient(150deg, var(--green-600), var(--green-800)); color: var(--cream);
+  font-family: var(--serif); font-size: 0.82rem; font-weight: 600; flex: 0 0 auto;
+}
+.how-strip-arrow { color: var(--amber); font-weight: 700; }
+@media (max-width: 640px) {
+  .how-strip-inner { flex-direction: column; gap: 12px; }
+  .how-strip-arrow { display: none; }
+}
+
 /* ---- Cards: depth, lift, accent ---- */
 .card, .cause-card, .program, .feature-card, .quiz-card, .form-card { border-radius: 20px; }
 .cause-card { transition: transform 0.24s cubic-bezier(0.2, 0.7, 0.2, 1), box-shadow 0.24s ease, border-color 0.24s ease; overflow: hidden; }
