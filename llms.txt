@@ -6,8 +6,10 @@ Founder and coach: Marliis Schneider - a former professional rower (national tea
 
 ## Core pages
 - [Home](index.html): What Steady is and how to start.
+- [Coaching](coaching.html): The Steady Method, programs, and transparent pricing ($199/mo).
 - [About](about.html): Marliis Schneider's story and coaching philosophy.
 - [Learn library](learn.html): All educational guides in one place.
+- [FAQ](faq.html): Common questions about cost, format (online, Central Time), and how it works.
 - [Symptom quiz](quiz.html): Find your likely root cause in 60 seconds.
 - [Book a call](contact.html): Free 20-minute discovery call.
 
@@ -23,6 +25,7 @@ Founder and coach: Marliis Schneider - a former professional rower (national tea
 - [Is It Really Gluten?](learn-gluten.html): Why many "gluten" reactions are actually to processed food and seed oils.
 - [Dairy: Friend, Not Enemy](learn-dairy.html): Why cutting dairy is usually the wrong move, and who genuinely needs to avoid it.
 - [Read a Food Label in 10 Seconds](learn-label.html): A fast method to spot seed oils, mystery ingredients, and hidden sugar.
+- [Why Am I So Tired All the Time?](learn-fatigue.html): The four fixable causes of everyday fatigue — blood sugar, protein, inflammation, and movement.
 
 ## Recipes & resources
 - [Real Meals](recipes.html): Simple, blood-sugar-friendly, seed-oil-free recipes (breakfasts, dinners, snacks).
