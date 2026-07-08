@@ -19,6 +19,11 @@ Founder and coach: Marliis Schneider - a former professional rower (national tea
 - [Bloating](learn-bloating.html): Reading the signal instead of cutting more foods.
 - [Eating Out & Travel](learn-eatingout.html): A playbook for restaurants, airports, hotels, and client dinners.
 - [Movement](learn-movement.html): Why a 10-minute walk after meals beats the gym for blood sugar.
+- [Blood Sugar 101](learn-diabetes.html): How blood sugar works and the three levers you control; for anyone, especially with a family history of diabetes.
+- [Is It Really Gluten?](learn-gluten.html): Why many "gluten" reactions are actually to processed food and seed oils.
+
+## Recipes
+- [Real Meals](recipes.html): Simple, blood-sugar-friendly, seed-oil-free recipes (breakfasts, dinners, snacks).
 
 ## Legal
 - [Privacy Policy](privacy.html)
