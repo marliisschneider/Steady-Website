@@ -77,7 +77,8 @@
 
       var sel = ".section-head, .cause-card, .card, .program, .step, .tl-item, " +
                 ".principle, .feature-card, .quote, .stat, .callout, .form-band, " +
-                ".gallery img, .coach-band > div, .story-figure, .quiz-card, .fit-col";
+                ".gallery img, .coach-band > div, .story-figure, .quiz-card, .fit-col, " +
+                ".viz-card, .figure";
       var nodes = [].slice.call(document.querySelectorAll(sel));
       if (!nodes.length) return;
 
