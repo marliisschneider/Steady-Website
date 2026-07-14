@@ -41,7 +41,8 @@
       var row = {
         name: data.name ? data.name.trim() : null,
         email: data.email.trim(),
-        source: source
+        source: source,
+        message: data.message ? data.message.trim() : null
       };
 
       var originalLabel = btn ? btn.textContent : "";
