@@ -105,7 +105,7 @@ DEMO_HTML = """
   <section>
     <div class="wrap narrow">
       <div class="form-card">
-        <form id="lead-form">
+        <form id="lead-form" class="lead-form">
           <div class="field">
             <label for="name">Name</label>
             <input id="name" required placeholder="Sarah Kim">
