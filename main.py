@@ -55,76 +55,86 @@ DEMO_HTML = """
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>SteadyLeadResearcher — Live Demo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,380;9..144,450;9..144,550;9..144,600&family=Inter:wght@400;500;600;650;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://marliisschneider.github.io/Steady-Website/steady2.css">
 <style>
-  :root { color-scheme: light dark; }
-  body {
-    font-family: -apple-system, BlinkMacSystemFont, "Inter", sans-serif;
-    max-width: 640px; margin: 40px auto; padding: 0 20px;
-    background: #F5F4F0; color: #181849;
+  /* Page-specific bits not covered by the site stylesheet (this page doesn't ship there) */
+  .demo-badge {
+    display: inline-block; font-family: var(--sans); font-size: 0.75rem; font-weight: 650;
+    letter-spacing: 0.04em; text-transform: uppercase; color: var(--green-800);
+    background: var(--green-100); padding: 4px 10px; border-radius: 999px; margin-bottom: 10px;
   }
-  h1 { font-size: 1.4rem; margin-bottom: 4px; }
-  p.sub { color: #4a4a63; margin-top: 0; }
-  form {
-    background: white; border-radius: 12px; padding: 24px;
-    box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-top: 20px;
-  }
-  label { display: block; font-weight: 600; margin: 14px 0 4px; font-size: 0.9rem; }
-  label:first-child { margin-top: 0; }
-  input, select, textarea {
-    width: 100%; padding: 8px 10px; border: 1px solid #ccc; border-radius: 6px;
-    font-size: 0.95rem; box-sizing: border-box; font-family: inherit;
-  }
-  textarea { min-height: 70px; resize: vertical; }
-  button {
-    margin-top: 18px; background: #403DD8; color: white; border: none;
-    padding: 10px 18px; border-radius: 6px; font-size: 0.95rem; cursor: pointer;
-  }
-  button:disabled { opacity: 0.6; cursor: wait; }
   #error {
-    display: none; margin-top: 16px; padding: 12px; border-radius: 8px;
-    background: #fde8e8; color: #a12626; font-size: 0.9rem;
+    display: none; margin-top: 16px; padding: 14px 16px; border-radius: 10px;
+    background: #fbe4de; color: #8a3324; font-family: var(--sans); font-size: 0.92rem;
   }
-  #result {
-    display: none; margin-top: 20px; background: white; border-radius: 12px;
-    padding: 24px; box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+  #result { display: none; margin-top: 28px; }
+  #result h3 {
+    font-family: var(--sans); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.05em;
+    color: var(--green-600); margin: 20px 0 6px;
   }
-  #result h3 { font-size: 0.85rem; text-transform: uppercase; letter-spacing: 0.04em;
-    color: #81AAFB; margin: 16px 0 4px; }
   #result h3:first-child { margin-top: 0; }
-  .muted { color: #999; font-style: italic; }
-  details { margin-top: 18px; font-size: 0.85rem; }
-  pre { white-space: pre-wrap; background: #181849; color: #dfe3ff; padding: 12px;
-    border-radius: 8px; overflow-x: auto; }
+  #result p, #result li { font-family: var(--sans); color: var(--ink); line-height: 1.5; }
+  .muted { color: var(--muted); font-style: italic; }
+  details { margin-top: 22px; font-family: var(--sans); font-size: 0.85rem; color: var(--muted); }
+  pre {
+    white-space: pre-wrap; background: var(--green-900); color: var(--cream);
+    padding: 14px; border-radius: 10px; overflow-x: auto; margin-top: 8px;
+  }
 </style>
 </head>
 <body>
-  <h1>SteadyLeadResearcher</h1>
-  <p class="sub">Live demo — fill this in like a real lead would, and watch the skill run.</p>
 
-  <form id="lead-form">
-    <label for="name">Name</label>
-    <input id="name" required placeholder="Sarah Kim">
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="https://marliisschneider.github.io/Steady-Website/index.html" class="brand"><span class="dot"></span>Steady</a>
+    </div>
+  </nav>
 
-    <label for="email">Email</label>
-    <input id="email" type="email" required placeholder="sarah.kim88@gmail.com">
+  <section class="article-hero">
+    <div class="wrap narrow">
+      <span class="demo-badge">Skill demo</span>
+      <p class="eyebrow">SteadyLeadResearcher</p>
+      <h1>Watch the lead-research Skill run, live.</h1>
+      <p class="lede">Fill this in like a real Steady lead would on the contact page, and see exactly what the Skill sends back — no code, no terminal.</p>
+    </div>
+  </section>
 
-    <label for="source">Source page</label>
-    <select id="source">
-      <option value="coaching">Coaching page</option>
-      <option value="pantry-reset">Pantry Reset page</option>
-      <option value="contact">Contact page</option>
-      <option value="homepage">Homepage</option>
-    </select>
+  <section>
+    <div class="wrap narrow">
+      <div class="form-card">
+        <form id="lead-form">
+          <div class="field">
+            <label for="name">Name</label>
+            <input id="name" required placeholder="Sarah Kim">
+          </div>
+          <div class="field">
+            <label for="email">Email</label>
+            <input id="email" type="email" required placeholder="sarah.kim88@gmail.com">
+          </div>
+          <div class="field">
+            <label for="source">Source page</label>
+            <select id="source">
+              <option value="coaching">Coaching page</option>
+              <option value="pantry-reset">Pantry Reset page</option>
+              <option value="contact">Contact page</option>
+              <option value="homepage">Homepage</option>
+            </select>
+          </div>
+          <div class="field">
+            <label for="message">What's going on? (optional — mimics the real contact form)</label>
+            <textarea id="message" placeholder="I've tried keto and intermittent fasting but nothing sticks with my travel schedule..."></textarea>
+          </div>
+          <button type="submit" class="btn btn-primary" id="submit-btn">Research this lead →</button>
+          <p class="form-msg" id="error" role="status" aria-live="polite"></p>
+        </form>
+      </div>
 
-    <label for="message">What's going on? (optional — mimics the contact form)</label>
-    <textarea id="message" placeholder="I've tried keto and intermittent fasting but nothing sticks with my travel schedule..."></textarea>
-
-    <button type="submit" id="submit-btn">Research this lead →</button>
-  </form>
-
-  <div id="error"></div>
-
-  <div id="result"></div>
+      <div id="result"></div>
+    </div>
+  </section>
 
   <script>
     function escapeHtml(str) {
