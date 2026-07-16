@@ -4,3 +4,8 @@ anthropic>=0.40.0
 pydantic>=2.0.0
 python-dotenv
 rich
+# enrich_agent.py dependencies (main.py imports it for /enrich and /lead)
+composio
+composio-client
+exa-py
+supabase

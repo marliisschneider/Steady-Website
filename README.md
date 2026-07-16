@@ -23,7 +23,8 @@ Professionals who feel worse than they should — bloated by 3pm, crashing after
 - `contact.html` — Booking form + Calendly embed
 - `quiz.html` — Symptom quiz routing to relevant Learn page
 - `learn-*.html` — Deep-dive educational pages on blood sugar, inflammation, gut health, etc.
-- `admin.html` — Internal leads dashboard (private)
+- `leads.html` — Internal leads pipeline board (private): drag leads through stages, click a card to see the agent's enrichment + editable draft
+- `board.html` — Internal tasks kanban (private)
 
 ## Tech stack
 
@@ -36,7 +37,7 @@ Professionals who feel worse than they should — bloated by 3pm, crashing after
 
 Just open `index.html` in a browser. No build step, no dependencies.
 
-For the Supabase-backed features (admin dashboard, quiz submission), the Supabase URL + anon key live in `config.js`.
+For the Supabase-backed features (leads board, quiz submission), the Supabase URL + anon key live in `config.js`. The leads board's write actions (drag-to-move, draft edits, enrich) go through the FastAPI server in `main.py`, which holds the service-role key.
 
 ## Built as part of MakerSquare Cohort 1
 

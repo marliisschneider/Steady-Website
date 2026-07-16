@@ -14,90 +14,73 @@
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <style>
-    .kanban {
-      display: grid;
-      grid-template-columns: repeat(4, minmax(0, 1fr));
-      gap: 20px;
-      align-items: start;
-    }
+    /* Board scrolls horizontally so all 6 pipeline columns stay readable */
+    .kanban-scroll { overflow-x: auto; padding-bottom: 8px; }
+    .kanban { display: flex; gap: 16px; align-items: start; min-width: min-content; }
+    .kanban-col { flex: 0 0 240px; }
     .kanban-col-head {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      padding: 12px 16px;
-      border-radius: 12px;
-      background: #14352a;
-      color: #f7f4ec;
-      font-weight: 650;
-      font-size: 0.95rem;
-      letter-spacing: 0.02em;
+      display: flex; align-items: center; gap: 10px; padding: 12px 16px;
+      border-radius: 12px; background: #14352a; color: #f7f4ec;
+      font-weight: 650; font-size: 0.92rem; letter-spacing: 0.02em;
     }
+    .kanban-col-head.needs { background: #7a3b26; }
     .kanban-count {
-      display: inline-flex;
-      align-items: center;
-      justify-content: center;
-      min-width: 26px;
-      height: 22px;
-      padding: 0 8px;
-      border-radius: 999px;
-      background: rgba(247, 244, 236, 0.18);
-      color: #f7f4ec;
-      font-size: 0.78rem;
-      font-weight: 700;
+      display: inline-flex; align-items: center; justify-content: center;
+      min-width: 24px; height: 22px; padding: 0 8px; border-radius: 999px;
+      background: rgba(247, 244, 236, 0.18); color: #f7f4ec; font-size: 0.78rem; font-weight: 700;
     }
     .kanban-cards {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      margin-top: 14px;
-      min-height: 24px;
+      display: flex; flex-direction: column; gap: 12px; margin-top: 14px;
+      min-height: 60px; border-radius: 12px; padding: 4px; transition: background 0.15s ease;
     }
+    .kanban-cards.drag-over { background: rgba(20, 53, 42, 0.07); }
     .lead-card {
-      background: #fff;
-      border-radius: 12px;
-      padding: 14px 16px;
+      background: #fff; border-radius: 12px; padding: 13px 15px; cursor: pointer;
       box-shadow: 0 1px 3px rgba(20, 53, 42, 0.08), 0 4px 14px rgba(20, 53, 42, 0.06);
-      border: 1px solid rgba(20, 53, 42, 0.06);
+      border: 1px solid rgba(20, 53, 42, 0.06); transition: transform 0.12s ease, box-shadow 0.15s ease;
     }
-    .lead-card h3 {
-      font-family: Inter, sans-serif;
-      font-size: 1rem;
-      font-weight: 700;
-      margin: 0 0 4px;
-      color: #14352a;
+    .lead-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(20, 53, 42, 0.12); }
+    .lead-card.dragging { opacity: 0.5; }
+    .lead-card h3 { font-family: Inter, sans-serif; font-size: 0.98rem; font-weight: 700; margin: 0 0 3px; color: #14352a; }
+    .lead-card .lead-email { display: block; font-size: 0.83rem; color: #40573f; word-break: break-all; margin-bottom: 9px; }
+    .lead-card .lead-meta { display: flex; justify-content: space-between; align-items: center; gap: 8px; font-size: 0.76rem; color: #6b7d6a; }
+    .lead-card .lead-source { background: #eef2e9; color: #2d4a3e; border-radius: 999px; padding: 2px 10px; font-weight: 600; }
+    .lead-badges { display: flex; gap: 6px; margin-top: 9px; flex-wrap: wrap; }
+    .lead-badge { font-size: 0.7rem; font-weight: 650; border-radius: 999px; padding: 2px 9px; }
+    .lead-badge.draft { background: #e6efe6; color: #2d5a3e; }
+    .lead-badge.manual { background: #f6e0d6; color: #8a3324; }
+    .kanban-empty { font-size: 0.82rem; color: #8a978a; padding: 10px 4px; }
+
+    /* Detail modal */
+    .modal-overlay {
+      position: fixed; inset: 0; background: rgba(20, 53, 42, 0.4);
+      display: flex; align-items: flex-start; justify-content: center;
+      padding: 40px 16px; overflow-y: auto; z-index: 100;
     }
-    .lead-card .lead-email {
-      display: block;
-      font-size: 0.86rem;
-      color: #40573f;
-      word-break: break-all;
-      margin-bottom: 10px;
+    .modal-overlay[hidden] { display: none; }
+    .modal-box {
+      background: var(--offwhite, #f7f4ec); border-radius: 16px; max-width: 640px; width: 100%;
+      padding: 26px 28px; box-shadow: 0 24px 60px rgba(20, 53, 42, 0.3); font-family: Inter, sans-serif;
     }
-    .lead-card .lead-meta {
-      display: flex;
-      justify-content: space-between;
-      gap: 8px;
-      font-size: 0.78rem;
-      color: #6b7d6a;
+    .modal-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 12px; margin-bottom: 18px; }
+    .modal-head h2 { margin: 0; font-size: 1.3rem; color: #14352a; }
+    .modal-head .m-email { font-size: 0.88rem; color: #40573f; }
+    .modal-close { background: none; border: none; font-size: 1.6rem; line-height: 1; cursor: pointer; color: #6b7d6a; }
+    .m-block { margin-bottom: 16px; }
+    .m-block h4 { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em; color: #40573f; margin: 0 0 5px; }
+    .m-block p, .m-block li { color: #1f2a1e; line-height: 1.5; margin: 0; }
+    .m-block .muted { color: #8a978a; font-style: italic; }
+    .m-block ul { margin: 0; padding-left: 20px; }
+    .draft-area {
+      width: 100%; min-height: 120px; font-family: Inter, sans-serif; font-size: 0.95rem; line-height: 1.5;
+      padding: 12px 14px; border: 1px solid rgba(20, 53, 42, 0.16); border-radius: 10px; resize: vertical;
+      color: #1f2a1e; background: #fff;
     }
-    .lead-card .lead-source {
-      background: #eef2e9;
-      color: #2d4a3e;
-      border-radius: 999px;
-      padding: 2px 10px;
-      font-weight: 600;
-    }
-    .kanban-empty {
-      font-size: 0.84rem;
-      color: #8a978a;
-      padding: 10px 4px;
-    }
-    @media (max-width: 980px) {
-      .kanban { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-    }
-    @media (max-width: 600px) {
-      .kanban { grid-template-columns: 1fr; }
-    }
+    .m-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 10px; }
+    .m-actions label { font-size: 0.82rem; color: #6b7d6a; }
+    .m-actions select { font-family: Inter, sans-serif; font-size: 0.9rem; padding: 6px 10px; border: 1px solid rgba(20, 53, 42, 0.16); border-radius: 8px; background: #fff; }
+    .m-msg { font-size: 0.85rem; color: #2d5a3e; }
+    .m-msg.err { color: #8a3324; }
   </style>
 </head>
 <body>
@@ -128,27 +111,26 @@
 
   <section>
     <div class="wrap">
-      <div class="kanban" id="kanban" hidden>
-        <div class="kanban-col" data-status="new">
-          <div class="kanban-col-head">New <span class="kanban-count">0</span></div>
-          <div class="kanban-cards"></div>
-        </div>
-        <div class="kanban-col" data-status="contacted">
-          <div class="kanban-col-head">Contacted <span class="kanban-count">0</span></div>
-          <div class="kanban-cards"></div>
-        </div>
-        <div class="kanban-col" data-status="booked">
-          <div class="kanban-col-head">Booked <span class="kanban-count">0</span></div>
-          <div class="kanban-cards"></div>
-        </div>
-        <div class="kanban-col" data-status="client">
-          <div class="kanban-col-head">Client <span class="kanban-count">0</span></div>
-          <div class="kanban-cards"></div>
-        </div>
+      <div class="kanban-scroll">
+        <div class="kanban" id="kanban" hidden></div>
       </div>
       <p class="form-msg" id="leads-msg" role="status" aria-live="polite"></p>
     </div>
   </section>
+
+  <!-- Lead detail modal -->
+  <div class="modal-overlay" id="modal" hidden>
+    <div class="modal-box">
+      <div class="modal-head">
+        <div>
+          <h2 id="m-name">—</h2>
+          <span class="m-email" id="m-email">—</span>
+        </div>
+        <button class="modal-close" id="m-close" aria-label="Close">×</button>
+      </div>
+      <div id="m-body"></div>
+    </div>
+  </div>
 
   <footer class="footer">
     <div class="wrap">
@@ -165,22 +147,62 @@
     (function () {
       "use strict";
 
-      var STATUSES = ["new", "contacted", "booked", "client"];
+      // FastAPI (main.py) — run `PORT=8001 PANEL_PAUSE_SECONDS=0 ./.venv/bin/python main.py`.
+      // Reads come straight from Supabase; writes (drag-to-move, draft edits,
+      // enrich) go through the server, which holds the service-role key.
+      var API_BASE = "http://localhost:8001";
+
+      var STATUS_META = [
+        { key: "new", label: "New" },
+        { key: "drafted", label: "Drafted" },
+        { key: "needs_manual_followup", label: "Needs you", needs: true },
+        { key: "contacted", label: "Contacted" },
+        { key: "booked", label: "Booked" },
+        { key: "client", label: "Client" }
+      ];
+      var STATUS_KEYS = STATUS_META.map(function (s) { return s.key; });
+
       var countEl = document.getElementById("lead-count");
       var kanbanEl = document.getElementById("kanban");
       var msgEl = document.getElementById("leads-msg");
+      var modalEl = document.getElementById("modal");
+      var mBody = document.getElementById("m-body");
+
+      var leads = {};       // id -> lead row
+      var openId = null;    // lead currently shown in the modal
+      var didDrag = false;
 
       function fail(text) {
         countEl.textContent = "Couldn't load leads.";
         msgEl.textContent = text;
         msgEl.className = "form-msg err";
       }
+      function setMsg(text, kind) { msgEl.textContent = text; msgEl.className = "form-msg " + (kind || ""); }
 
+      function el(tag, cls, text) {
+        var e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text !== undefined) e.textContent = text;
+        return e;
+      }
       function fmtDate(iso) {
         if (!iso) return "—";
         var d = new Date(iso);
         if (isNaN(d)) return iso;
         return d.toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+      }
+      function normStatus(s) {
+        s = (s || "new").toLowerCase().trim();
+        return STATUS_KEYS.indexOf(s) !== -1 ? s : "new";
+      }
+      function apiPost(path, body) {
+        return fetch(API_BASE + path, {
+          method: "POST",
+          headers: body ? { "Content-Type": "application/json" } : {},
+          body: body ? JSON.stringify(body) : undefined
+        }).then(function (res) {
+          return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        });
       }
 
       var client = null;
@@ -194,9 +216,222 @@
         return;
       }
 
+      // ---- Board rendering -----------------------------------------------
+      function buildColumns() {
+        kanbanEl.textContent = "";
+        STATUS_META.forEach(function (meta) {
+          var col = el("div", "kanban-col");
+          col.dataset.status = meta.key;
+
+          var head = el("div", "kanban-col-head" + (meta.needs ? " needs" : ""));
+          head.appendChild(document.createTextNode(meta.label + " "));
+          head.appendChild(el("span", "kanban-count", "0"));
+          col.appendChild(head);
+
+          var cards = el("div", "kanban-cards");
+          cards.addEventListener("dragover", function (e) { e.preventDefault(); cards.classList.add("drag-over"); });
+          cards.addEventListener("dragleave", function (e) { if (!cards.contains(e.relatedTarget)) cards.classList.remove("drag-over"); });
+          cards.addEventListener("drop", function (e) {
+            e.preventDefault();
+            cards.classList.remove("drag-over");
+            var id = e.dataTransfer.getData("text/plain");
+            if (leads[id]) moveLead(leads[id], meta.key);
+          });
+          col.appendChild(cards);
+          kanbanEl.appendChild(col);
+        });
+      }
+
+      function render() {
+        STATUS_META.forEach(function (meta) {
+          var col = kanbanEl.querySelector('.kanban-col[data-status="' + meta.key + '"]');
+          var cardsEl = col.querySelector(".kanban-cards");
+          cardsEl.textContent = "";
+
+          var list = Object.keys(leads).map(function (k) { return leads[k]; })
+            .filter(function (l) { return normStatus(l.status) === meta.key; })
+            .sort(function (a, b) { return (a.created_at || "") < (b.created_at || "") ? 1 : -1; });
+
+          col.querySelector(".kanban-count").textContent = list.length;
+          if (!list.length) { cardsEl.appendChild(el("p", "kanban-empty", "No leads here.")); return; }
+          list.forEach(function (lead) { cardsEl.appendChild(makeCard(lead)); });
+        });
+      }
+
+      function makeCard(lead) {
+        var card = el("div", "lead-card");
+        card.draggable = true;
+        card.dataset.id = lead.id;
+
+        card.appendChild(el("h3", null, lead.name || "—"));
+        card.appendChild(el("span", "lead-email", lead.email || "—"));
+
+        var meta = el("div", "lead-meta");
+        meta.appendChild(el("span", "lead-source", lead.source || "—"));
+        meta.appendChild(el("span", null, fmtDate(lead.created_at)));
+        card.appendChild(meta);
+
+        if (lead.draft_message || normStatus(lead.status) === "needs_manual_followup") {
+          var badges = el("div", "lead-badges");
+          if (lead.draft_message) badges.appendChild(el("span", "lead-badge draft", "✎ draft ready"));
+          if (normStatus(lead.status) === "needs_manual_followup") badges.appendChild(el("span", "lead-badge manual", "needs you"));
+          card.appendChild(badges);
+        }
+
+        card.addEventListener("dragstart", function (e) {
+          didDrag = true;
+          e.dataTransfer.setData("text/plain", lead.id);
+          e.dataTransfer.effectAllowed = "move";
+          card.classList.add("dragging");
+        });
+        card.addEventListener("dragend", function () {
+          card.classList.remove("dragging");
+          setTimeout(function () { didDrag = false; }, 0);
+        });
+        card.addEventListener("click", function () {
+          if (didDrag) return;
+          openModal(lead);
+        });
+        return card;
+      }
+
+      // Optimistically move the card, then persist through the server.
+      function moveLead(lead, toStatus) {
+        if (!lead || normStatus(lead.status) === toStatus) return;
+        var prev = lead.status;
+        lead.status = toStatus;
+        render();
+        setMsg("", "");
+        apiPost("/lead/" + lead.id, { status: toStatus })
+          .then(function (r) {
+            if (!r.ok) throw new Error(r.data.detail || "Save failed");
+            lead.status = r.data.status;
+            if (openId === lead.id) fillModal(lead);
+          })
+          .catch(function (err) {
+            lead.status = prev;
+            render();
+            setMsg("Couldn't move that lead: " + err.message + " (is the FastAPI server running on :8001?)", "err");
+          });
+      }
+
+      // ---- Detail modal ---------------------------------------------------
+      function openModal(lead) {
+        openId = lead.id;
+        fillModal(lead);
+        modalEl.hidden = false;
+      }
+      function closeModal() { modalEl.hidden = true; openId = null; }
+
+      function fillModal(lead) {
+        document.getElementById("m-name").textContent = lead.name || "—";
+        document.getElementById("m-email").textContent = lead.email || "—";
+        mBody.textContent = "";
+
+        if (lead.message) {
+          var mb = el("div", "m-block");
+          mb.appendChild(el("h4", null, "Their message"));
+          mb.appendChild(el("p", null, lead.message));
+          mBody.appendChild(mb);
+        }
+
+        var ib = el("div", "m-block");
+        ib.appendChild(el("h4", null, "Likely industry"));
+        ib.appendChild(lead.industry ? el("p", null, lead.industry) : el("p", "muted", "— not enough evidence yet —"));
+        mBody.appendChild(ib);
+
+        var pb = el("div", "m-block");
+        pb.appendChild(el("h4", null, "Pain points"));
+        if (Array.isArray(lead.pain_points) && lead.pain_points.length) {
+          var ul = el("ul");
+          lead.pain_points.forEach(function (p) { ul.appendChild(el("li", null, p)); });
+          pb.appendChild(ul);
+        } else { pb.appendChild(el("p", "muted", "— not enough evidence yet —")); }
+        mBody.appendChild(pb);
+
+        var hb = el("div", "m-block");
+        hb.appendChild(el("h4", null, "Conversation hook"));
+        hb.appendChild(lead.hook ? el("p", null, lead.hook) : el("p", "muted", "— not enough evidence yet —"));
+        mBody.appendChild(hb);
+
+        // Editable draft
+        var db = el("div", "m-block");
+        db.appendChild(el("h4", null, "Draft follow-up  (edit freely, then Save)"));
+        var textarea = el("textarea", "draft-area");
+        textarea.value = lead.draft_message || "";
+        textarea.placeholder = "No draft yet — run Enrich to generate one, or write your own.";
+        db.appendChild(textarea);
+
+        var acts = el("div", "m-actions");
+        var saveBtn = el("button", "btn btn-primary btn-sm", "Save draft"); saveBtn.type = "button";
+        var copyBtn = el("button", "btn btn-ghost btn-sm", "Copy"); copyBtn.type = "button";
+        var enrichBtn = el("button", "btn btn-ghost btn-sm", lead.status && normStatus(lead.status) !== "new" ? "Re-run enrich" : "Enrich");
+        enrichBtn.type = "button";
+        var dMsg = el("span", "m-msg");
+        acts.appendChild(saveBtn); acts.appendChild(copyBtn); acts.appendChild(enrichBtn); acts.appendChild(dMsg);
+        db.appendChild(acts);
+        mBody.appendChild(db);
+
+        // Status control (mirror of dragging a card)
+        var sb = el("div", "m-actions");
+        sb.appendChild(el("label", null, "Status"));
+        var select = el("select");
+        STATUS_META.forEach(function (m) {
+          var opt = el("option", null, m.label); opt.value = m.key;
+          if (m.key === normStatus(lead.status)) opt.selected = true;
+          select.appendChild(opt);
+        });
+        sb.appendChild(select);
+        mBody.appendChild(sb);
+
+        saveBtn.addEventListener("click", function () {
+          dMsg.className = "m-msg"; dMsg.textContent = "Saving…"; saveBtn.disabled = true;
+          apiPost("/lead/" + lead.id, { draft_message: textarea.value })
+            .then(function (r) {
+              saveBtn.disabled = false;
+              if (!r.ok) throw new Error(r.data.detail || "Save failed");
+              lead.draft_message = textarea.value;
+              render();
+              dMsg.textContent = "Saved ✓";
+            })
+            .catch(function (err) { dMsg.className = "m-msg err"; dMsg.textContent = "Couldn't save: " + err.message; });
+        });
+
+        copyBtn.addEventListener("click", function () {
+          navigator.clipboard.writeText(textarea.value).then(function () {
+            dMsg.className = "m-msg"; dMsg.textContent = "Copied ✓";
+          });
+        });
+
+        enrichBtn.addEventListener("click", function () {
+          dMsg.className = "m-msg"; dMsg.textContent = "Enriching… (can take ~15s)"; enrichBtn.disabled = true;
+          apiPost("/enrich/" + lead.id, null)
+            .then(function (r) {
+              enrichBtn.disabled = false;
+              if (!r.ok) throw new Error(r.data.detail || "Enrich failed");
+              lead.status = r.data.status;
+              lead.industry = r.data.fields.industry;
+              lead.pain_points = r.data.fields.pain_points;
+              lead.hook = r.data.fields.hook;
+              lead.draft_message = r.data.draft;
+              render();
+              if (openId === lead.id) fillModal(lead);
+            })
+            .catch(function (err) { dMsg.className = "m-msg err"; dMsg.textContent = "Couldn't enrich: " + err.message; enrichBtn.disabled = false; });
+        });
+
+        select.addEventListener("change", function () { moveLead(lead, select.value); });
+      }
+
+      document.getElementById("m-close").addEventListener("click", closeModal);
+      modalEl.addEventListener("click", function (e) { if (e.target === modalEl) closeModal(); });
+      document.addEventListener("keydown", function (e) { if (e.key === "Escape") closeModal(); });
+
+      // ---- Load -----------------------------------------------------------
+      buildColumns();
       client
         .from("steady_leads")
-        .select("name, email, source, status, created_at")
+        .select("id, name, email, source, status, created_at, message, industry, pain_points, hook, draft_message")
         .order("created_at", { ascending: false })
         .then(function (res) {
           if (res.error) {
@@ -205,57 +440,10 @@
               " (if this says permission denied, the table's RLS policy doesn't allow reads with the publishable key).");
             return;
           }
-
           var rows = res.data || [];
           countEl.textContent = rows.length === 1 ? "1 lead total" : rows.length + " leads total";
-
-          STATUSES.forEach(function (status) {
-            var col = kanbanEl.querySelector('.kanban-col[data-status="' + status + '"]');
-            var cardsEl = col.querySelector(".kanban-cards");
-            var leads = rows.filter(function (r) {
-              return (r.status || "new").toLowerCase() === status;
-            });
-
-            col.querySelector(".kanban-count").textContent = leads.length;
-
-            if (!leads.length) {
-              var empty = document.createElement("p");
-              empty.className = "kanban-empty";
-              empty.textContent = "No leads here yet.";
-              cardsEl.appendChild(empty);
-              return;
-            }
-
-            leads.forEach(function (lead) {
-              var card = document.createElement("div");
-              card.className = "lead-card";
-
-              var name = document.createElement("h3");
-              name.textContent = lead.name || "—";
-              card.appendChild(name);
-
-              var email = document.createElement("span");
-              email.className = "lead-email";
-              email.textContent = lead.email || "—";
-              card.appendChild(email);
-
-              var meta = document.createElement("div");
-              meta.className = "lead-meta";
-
-              var source = document.createElement("span");
-              source.className = "lead-source";
-              source.textContent = lead.source || "—";
-              meta.appendChild(source);
-
-              var date = document.createElement("span");
-              date.textContent = fmtDate(lead.created_at);
-              meta.appendChild(date);
-
-              card.appendChild(meta);
-              cardsEl.appendChild(card);
-            });
-          });
-
+          rows.forEach(function (r) { leads[r.id] = r; });
+          render();
           kanbanEl.hidden = false;
         });
     })();

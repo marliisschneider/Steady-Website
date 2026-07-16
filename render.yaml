@@ -5,5 +5,19 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
     envVars:
+      # Secrets — set the actual values in the Render dashboard (never in git).
       - key: ANTHROPIC_API_KEY
         sync: false
+      - key: EXA_API_KEY
+        sync: false
+      - key: COMPOSIO_API_KEY
+        sync: false
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_ANON_KEY
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      # No teaching pauses on the server — the panels are for the local terminal.
+      - key: PANEL_PAUSE_SECONDS
+        value: "0"
