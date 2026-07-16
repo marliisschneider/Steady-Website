@@ -1,9 +1,21 @@
 services:
+  # 1. The SteadyLeadResearcher skill — lean, only needs an Anthropic key.
   - type: web
     name: steady-lead-researcher
     runtime: python
     buildCommand: pip install -r requirements.txt
     startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: ANTHROPIC_API_KEY
+        sync: false
+
+  # 2. The leads-board backend (/enrich, /lead) — its own service so a leads
+  #    change can't break the skill. Needs the full secret set.
+  - type: web
+    name: steady-leads-api
+    runtime: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn leads_api:app --host 0.0.0.0 --port $PORT
     envVars:
       # Secrets — set the actual values in the Render dashboard (never in git).
       - key: ANTHROPIC_API_KEY

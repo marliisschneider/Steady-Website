@@ -147,10 +147,14 @@
     (function () {
       "use strict";
 
-      // FastAPI (main.py) — run `PORT=8001 PANEL_PAUSE_SECONDS=0 ./.venv/bin/python main.py`.
       // Reads come straight from Supabase; writes (drag-to-move, draft edits,
-      // enrich) go through the server, which holds the service-role key.
-      var API_BASE = "http://localhost:8001";
+      // enrich) go through leads_api.py, which holds the service-role key.
+      // Local dev hits it on :8001; the live site hits its own Render service.
+      // NOTE: confirm this matches your actual Render URL for the steady-leads-api
+      // service after you create it (Render appends a suffix if the name is taken).
+      var API_BASE = (location.hostname === "localhost" || location.hostname === "127.0.0.1")
+        ? "http://localhost:8001"
+        : "https://steady-leads-api.onrender.com";
 
       var STATUS_META = [
         { key: "new", label: "New" },
