@@ -13,6 +13,35 @@
   <meta name="theme-color" content="#14352a">
   <link rel="icon" href="favicon.ico" sizes="any">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
+  <style>
+    /* Admin-only bits not in the shared site stylesheet */
+    #leads-table tbody tr.lead-main { cursor: pointer; }
+    #leads-table tbody tr.lead-main:hover td { background: var(--green-100); }
+    .caret { display: inline-block; width: 1em; color: var(--green-600); transition: transform 0.15s ease; }
+    .lead-main.open .caret { transform: rotate(90deg); }
+    .lead-detail-row td { background: var(--cream); padding: 0; }
+    .lead-detail { padding: 20px 22px; display: grid; gap: 16px; font-family: var(--sans); }
+    .lead-detail h4 {
+      font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.06em;
+      color: var(--green-600); margin: 0 0 4px;
+    }
+    .lead-detail p, .lead-detail li { color: var(--ink); line-height: 1.5; margin: 0; }
+    .lead-detail .muted { color: var(--muted); font-style: italic; }
+    .lead-detail ul { margin: 0; padding-left: 20px; }
+    .draft-area {
+      width: 100%; min-height: 120px; font-family: var(--sans); font-size: 0.95rem;
+      line-height: 1.5; padding: 12px 14px; border: 1px solid var(--line); border-radius: 10px;
+      resize: vertical; color: var(--ink); background: var(--white);
+    }
+    .detail-actions { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+    .detail-actions label { font-size: 0.82rem; color: var(--muted); }
+    .status-select, .detail-actions select {
+      font-family: var(--sans); font-size: 0.9rem; padding: 6px 10px;
+      border: 1px solid var(--line); border-radius: 8px; background: var(--white); color: var(--ink);
+    }
+    .detail-msg { font-size: 0.85rem; color: var(--green-700); }
+    .detail-msg.err { color: #8a3324; }
+  </style>
 </head>
 <body>
 
@@ -110,32 +139,171 @@
         return;
       }
 
-      function enrichLead(leadId, row, statusCell, btn) {
+      var STATUSES = ["new", "drafted", "needs_manual_followup", "contacted", "booked", "client"];
+
+      // POST a partial update ({status} and/or {draft_message}) through the
+      // FastAPI server, which holds the service-role key. Reads come straight
+      // from Supabase, but writes must go through the server.
+      function apiPost(path, body) {
+        return fetch(API_BASE + path, {
+          method: "POST",
+          headers: body ? { "Content-Type": "application/json" } : {},
+          body: body ? JSON.stringify(body) : undefined
+        }).then(function (res) {
+          return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+        });
+      }
+
+      function el(tag, cls, text) {
+        var e = document.createElement(tag);
+        if (cls) e.className = cls;
+        if (text !== undefined) e.textContent = text;
+        return e;
+      }
+
+      // Fills the expandable detail panel for one lead. Rebuilt on open and
+      // after any change so it always reflects the current row object.
+      function renderDetail(row, container) {
+        container.textContent = "";
+        var panel = el("div", "lead-detail");
+
+        if (row.message) {
+          var mBlock = el("div");
+          mBlock.appendChild(el("h4", null, "Their message"));
+          mBlock.appendChild(el("p", null, row.message));
+          panel.appendChild(mBlock);
+        }
+
+        var iBlock = el("div");
+        iBlock.appendChild(el("h4", null, "Likely industry"));
+        iBlock.appendChild(row.industry ? el("p", null, row.industry) : el("p", "muted", "— not enough evidence yet —"));
+        panel.appendChild(iBlock);
+
+        var pBlock = el("div");
+        pBlock.appendChild(el("h4", null, "Pain points"));
+        if (Array.isArray(row.pain_points) && row.pain_points.length) {
+          var ul = el("ul");
+          row.pain_points.forEach(function (p) { ul.appendChild(el("li", null, p)); });
+          pBlock.appendChild(ul);
+        } else {
+          pBlock.appendChild(el("p", "muted", "— not enough evidence yet —"));
+        }
+        panel.appendChild(pBlock);
+
+        var hBlock = el("div");
+        hBlock.appendChild(el("h4", null, "Conversation hook"));
+        hBlock.appendChild(row.hook ? el("p", null, row.hook) : el("p", "muted", "— not enough evidence yet —"));
+        panel.appendChild(hBlock);
+
+        // Editable draft
+        var dBlock = el("div");
+        dBlock.appendChild(el("h4", null, "Draft follow-up  (edit freely, then Save)"));
+        var textarea = el("textarea", "draft-area");
+        textarea.value = row.draft_message || "";
+        textarea.placeholder = "No draft yet — run Enrich to generate one, or write your own here.";
+        dBlock.appendChild(textarea);
+
+        var actions = el("div", "detail-actions");
+        var saveBtn = el("button", "btn btn-primary btn-sm", "Save draft");
+        saveBtn.type = "button";
+        var copyBtn = el("button", "btn btn-ghost btn-sm", "Copy");
+        copyBtn.type = "button";
+        var detailMsg = el("span", "detail-msg");
+        actions.appendChild(saveBtn);
+        actions.appendChild(copyBtn);
+        actions.appendChild(detailMsg);
+        dBlock.appendChild(actions);
+        panel.appendChild(dBlock);
+
+        // Status dropdown
+        var sBlock = el("div", "detail-actions");
+        sBlock.appendChild(el("label", null, "Status"));
+        var select = el("select", "status-select");
+        STATUSES.forEach(function (s) {
+          var opt = el("option", null, s);
+          opt.value = s;
+          if (s === row.status) opt.selected = true;
+          select.appendChild(opt);
+        });
+        var statusMsg = el("span", "detail-msg");
+        sBlock.appendChild(select);
+        sBlock.appendChild(statusMsg);
+        panel.appendChild(sBlock);
+
+        saveBtn.addEventListener("click", function () {
+          detailMsg.className = "detail-msg";
+          detailMsg.textContent = "Saving…";
+          saveBtn.disabled = true;
+          apiPost("/lead/" + row.id, { draft_message: textarea.value })
+            .then(function (r) {
+              saveBtn.disabled = false;
+              if (!r.ok) throw new Error(r.data.detail || "Save failed");
+              row.draft_message = textarea.value;
+              detailMsg.textContent = "Saved ✓";
+            })
+            .catch(function (err) {
+              detailMsg.className = "detail-msg err";
+              detailMsg.textContent = "Couldn't save: " + err.message + " (is the FastAPI server running on :8001?)";
+            });
+        });
+
+        copyBtn.addEventListener("click", function () {
+          navigator.clipboard.writeText(textarea.value).then(function () {
+            detailMsg.className = "detail-msg";
+            detailMsg.textContent = "Copied to clipboard ✓";
+          });
+        });
+
+        select.addEventListener("change", function () {
+          var next = select.value;
+          statusMsg.className = "detail-msg";
+          statusMsg.textContent = "Saving…";
+          apiPost("/lead/" + row.id, { status: next })
+            .then(function (r) {
+              if (!r.ok) throw new Error(r.data.detail || "Save failed");
+              row.status = r.data.status;
+              row._statusCell.textContent = row.status;
+              statusMsg.textContent = "Saved ✓";
+            })
+            .catch(function (err) {
+              select.value = row.status;
+              statusMsg.className = "detail-msg err";
+              statusMsg.textContent = "Couldn't save: " + err.message;
+            });
+        });
+
+        container.appendChild(panel);
+      }
+
+      function enrichLead(row, btn) {
         btn.disabled = true;
         btn.textContent = "Enriching…";
 
-        fetch(API_BASE + "/enrich/" + leadId, { method: "POST" })
-          .then(function (res) {
-            return res.json().then(function (data) { return { ok: res.ok, data: data }; });
-          })
+        apiPost("/enrich/" + row.id, null)
           .then(function (r) {
-            if (!r.ok) throw new Error(r.data.detail || "Request failed");
-            row.status = r.data.status;
-            statusCell.textContent = r.data.status;
-            btn.textContent = "Re-run";
             btn.disabled = false;
+            if (!r.ok) throw new Error(r.data.detail || "Request failed");
+            // Fold the fresh enrichment back onto the row so the open detail updates
+            row.status = r.data.status;
+            row.industry = r.data.fields.industry;
+            row.pain_points = r.data.fields.pain_points;
+            row.hook = r.data.fields.hook;
+            row.draft_message = r.data.draft;
+            row._statusCell.textContent = row.status;
+            btn.textContent = "Re-run";
+            if (!row._detailTr.hidden) renderDetail(row, row._detailCell);
           })
           .catch(function (err) {
-            statusCell.textContent = row.status + " (enrich failed)";
-            btn.textContent = "Enrich";
             btn.disabled = false;
+            btn.textContent = "Enrich";
+            row._statusCell.textContent = row.status + " (enrich failed)";
             console.error("Steady admin: enrich failed", err);
           });
       }
 
       client
         .from("steady_leads")
-        .select("id, name, email, source, status, created_at")
+        .select("id, name, email, source, status, created_at, message, industry, pain_points, hook, draft_message")
         .order("created_at", { ascending: false })
         .then(function (res) {
           if (res.error) {
@@ -154,29 +322,50 @@
           }
 
           rows.forEach(function (row) {
-            var tr = document.createElement("tr");
-            [row.name || "—", row.email || "—", row.source || "—", fmtDate(row.created_at)].forEach(function (val) {
-              var td = document.createElement("td");
-              td.textContent = val;
-              tr.appendChild(td);
+            var tr = el("tr", "lead-main");
+
+            var nameCell = el("td");
+            nameCell.appendChild(el("span", "caret", "▸"));
+            nameCell.appendChild(document.createTextNode(" " + (row.name || "—")));
+            tr.appendChild(nameCell);
+
+            [row.email || "—", row.source || "—", fmtDate(row.created_at)].forEach(function (val) {
+              tr.appendChild(el("td", null, val));
             });
 
-            var statusCell = document.createElement("td");
-            statusCell.textContent = row.status || "—";
+            var statusCell = el("td", null, row.status || "—");
+            row._statusCell = statusCell;
             tr.appendChild(statusCell);
 
-            var actionCell = document.createElement("td");
-            var btn = document.createElement("button");
+            var actionCell = el("td");
+            var btn = el("button", "btn btn-ghost btn-sm", row.status && row.status !== "new" ? "Re-run" : "Enrich");
             btn.type = "button";
-            btn.className = "btn btn-secondary";
-            btn.textContent = row.status && row.status !== "new" ? "Re-run" : "Enrich";
-            btn.addEventListener("click", function () {
-              enrichLead(row.id, row, statusCell, btn);
+            btn.addEventListener("click", function (e) {
+              e.stopPropagation();
+              enrichLead(row, btn);
             });
             actionCell.appendChild(btn);
             tr.appendChild(actionCell);
 
+            // Hidden detail row, filled lazily on first open
+            var detailTr = el("tr", "lead-detail-row");
+            detailTr.hidden = true;
+            var detailCell = el("td");
+            detailCell.colSpan = 6;
+            detailTr.appendChild(detailCell);
+            row._detailTr = detailTr;
+            row._detailCell = detailCell;
+
+            tr.addEventListener("click", function (e) {
+              if (e.target.closest("button, select, textarea, a, input")) return;
+              var opening = detailTr.hidden;
+              detailTr.hidden = !opening;
+              tr.classList.toggle("open", opening);
+              if (opening) renderDetail(row, detailCell);
+            });
+
             bodyEl.appendChild(tr);
+            bodyEl.appendChild(detailTr);
           });
           tableEl.hidden = false;
         });

@@ -9,8 +9,15 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
-from enrich_agent import EnrichmentError, enrich_lead
+from enrich_agent import EnrichmentError, enrich_lead, supabase_admin
 from steady_lead_researcher import LeadResearchError, research_lead
+
+# Pipeline stages a lead can move through. Agent sets 'drafted' /
+# 'needs_manual_followup'; the rest are human sales-pipeline stages set
+# from the admin dashboard.
+ALLOWED_STATUSES = {
+    "new", "drafted", "needs_manual_followup", "contacted", "booked", "client",
+}
 
 app = FastAPI()
 
@@ -29,6 +36,11 @@ class LeadInput(BaseModel):
     email: str
     source: str | None = None
     message: str | None = None
+
+
+class LeadUpdate(BaseModel):
+    status: str | None = None
+    draft_message: str | None = None
 
 
 @app.get("/")
@@ -50,6 +62,26 @@ def enrich(lead_id: str):
         return enrich_lead(lead_id)
     except EnrichmentError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+
+
+@app.post("/lead/{lead_id}")
+def update_lead(lead_id: str, update: LeadUpdate):
+    # Writes go through the service-role client (server-side only) because the
+    # public site's anon key intentionally can't UPDATE steady_leads.
+    patch = {}
+    if update.status is not None:
+        if update.status not in ALLOWED_STATUSES:
+            raise HTTPException(status_code=400, detail=f"Unknown status: {update.status!r}")
+        patch["status"] = update.status
+    if update.draft_message is not None:
+        patch["draft_message"] = update.draft_message
+    if not patch:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+
+    resp = supabase_admin.table("steady_leads").update(patch).eq("id", lead_id).execute()
+    if not resp.data:
+        raise HTTPException(status_code=404, detail=f"No lead found with id={lead_id!r}")
+    return resp.data[0]
 
 
 @app.get("/demo", response_class=HTMLResponse)

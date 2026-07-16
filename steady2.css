@@ -138,6 +138,7 @@ section { padding: clamp(56px, 9vw, 104px) 0; }
 .btn-light:hover { background: var(--white); }
 
 .btn-lg { padding: 18px 36px; font-size: 1.08rem; }
+.btn-sm { padding: 6px 16px; font-size: 0.85rem; white-space: nowrap; }
 
 /* ---------- Nav ---------- */
 .nav {
