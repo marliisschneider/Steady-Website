@@ -96,11 +96,30 @@
             <span class="result-badge" id="r-badge">Your likely root cause</span>
             <h2 id="r-title"></h2>
             <p id="r-body"></p>
-            <div class="quiz-result-cta">
-              <a href="#" class="btn btn-primary btn-lg" id="r-guide">Read the full guide →</a>
-              <a href="contact.html" class="btn btn-ghost btn-lg">Book a free call to talk it through →</a>
+
+            <!-- Email capture — the lead magnet -->
+            <div class="form-card" style="margin:24px 0;text-align:left;">
+              <p style="margin:0 0 14px;font-weight:600;">Want your full <span id="r-cause-name">personalized</span> protocol — plus a starting plan tailored to the symptoms you picked? I'll send it straight to your inbox.</p>
+              <form class="lead-form" data-lead-form="quiz" id="quiz-capture-form">
+                <div class="field">
+                  <label for="q-name">First name</label>
+                  <input id="q-name" name="name" type="text" placeholder="Your name" autocomplete="given-name">
+                </div>
+                <div class="field">
+                  <label for="q-email">Email</label>
+                  <input id="q-email" name="email" type="email" required placeholder="you@work.com" autocomplete="email">
+                </div>
+                <input type="hidden" name="message" id="q-capture-message">
+                <button type="submit" class="btn btn-primary">Send me my protocol →</button>
+                <p class="form-msg" role="status" aria-live="polite"></p>
+              </form>
             </div>
-            <p style="margin-top:26px;">
+
+            <div class="quiz-result-cta">
+              <a href="#" class="btn btn-ghost" id="r-guide">Or read the full guide →</a>
+              <a href="contact.html" class="btn btn-ghost">Book a free call →</a>
+            </div>
+            <p style="margin-top:22px;">
               <button class="btn btn-light" id="btn-restart" type="button" style="font-size:0.92rem;padding:10px 20px;">↺ Retake the quiz</button>
             </p>
           </div>
@@ -144,6 +163,11 @@
       <p class="footer-disclaimer">Steady provides nutrition education and coaching — not medical advice, diagnosis, or treatment. Consult your physician before changing your diet, especially if you have a health condition.</p>
     </div>
   </footer>
+
+  <!-- Supabase + shared form handler: wires the quiz-capture form to steady_leads -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 
   <script>
   (function () {
@@ -275,6 +299,22 @@
       els.rTitle.textContent = "Your likely root cause: " + r.title;
       els.rBody.textContent = r.body;
       els.rGuide.setAttribute("href", r.guide);
+
+      // Personalize the capture prompt, and stash context for the lead row so
+      // the enrichment agent can draft from the actual result + symptoms picked.
+      var causeName = document.getElementById("r-cause-name");
+      if (causeName) causeName.textContent = r.title;
+
+      var selected = [];
+      state.answers.forEach(function (picks, qi) {
+        picks.forEach(function (oi) { selected.push(QUESTIONS[qi].options[oi].text); });
+      });
+      var hidden = document.getElementById("q-capture-message");
+      if (hidden) {
+        hidden.value = "Took the symptom quiz. Likely root cause: " + r.title + ". " +
+          (selected.length ? "Symptoms they selected: " + selected.join("; ") + "." : "No symptoms selected.");
+      }
+
       els.stageQ.classList.add("hidden");
       els.stageR.classList.remove("hidden");
       for (var b = 0; b < els.progress.length; b++) { els.progress[b].className = "bar active"; }
