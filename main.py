@@ -9,6 +9,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from pydantic import BaseModel
 
+from enrich_agent import EnrichmentError, enrich_lead
 from steady_lead_researcher import LeadResearchError, research_lead
 
 app = FastAPI()
@@ -41,6 +42,14 @@ def research(input: LeadInput):
         return research_lead(input.name, input.email, source=input.source, message=input.message)
     except LeadResearchError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
+
+
+@app.post("/enrich/{lead_id}")
+def enrich(lead_id: str):
+    try:
+        return enrich_lead(lead_id)
+    except EnrichmentError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
 
 @app.get("/demo", response_class=HTMLResponse)

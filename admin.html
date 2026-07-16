@@ -50,6 +50,8 @@
               <th>Email</th>
               <th>Source</th>
               <th>Signed up</th>
+              <th>Status</th>
+              <th></th>
             </tr>
           </thead>
           <tbody id="leads-body"></tbody>
@@ -79,6 +81,10 @@
       var bodyEl = document.getElementById("leads-body");
       var msgEl = document.getElementById("leads-msg");
 
+      // FastAPI (main.py) — run `PORT=8001 ./.venv/bin/python main.py` before using the Enrich button.
+      // Port 8001, not 8000 — 8000 is already used by another local project.
+      var API_BASE = "http://localhost:8001";
+
       function fail(text) {
         countEl.textContent = "Couldn't load leads.";
         msgEl.textContent = text;
@@ -104,9 +110,32 @@
         return;
       }
 
+      function enrichLead(leadId, row, statusCell, btn) {
+        btn.disabled = true;
+        btn.textContent = "Enriching…";
+
+        fetch(API_BASE + "/enrich/" + leadId, { method: "POST" })
+          .then(function (res) {
+            return res.json().then(function (data) { return { ok: res.ok, data: data }; });
+          })
+          .then(function (r) {
+            if (!r.ok) throw new Error(r.data.detail || "Request failed");
+            row.status = r.data.status;
+            statusCell.textContent = r.data.status;
+            btn.textContent = "Re-run";
+            btn.disabled = false;
+          })
+          .catch(function (err) {
+            statusCell.textContent = row.status + " (enrich failed)";
+            btn.textContent = "Enrich";
+            btn.disabled = false;
+            console.error("Steady admin: enrich failed", err);
+          });
+      }
+
       client
         .from("steady_leads")
-        .select("name, email, source, created_at")
+        .select("id, name, email, source, status, created_at")
         .order("created_at", { ascending: false })
         .then(function (res) {
           if (res.error) {
@@ -131,6 +160,22 @@
               td.textContent = val;
               tr.appendChild(td);
             });
+
+            var statusCell = document.createElement("td");
+            statusCell.textContent = row.status || "—";
+            tr.appendChild(statusCell);
+
+            var actionCell = document.createElement("td");
+            var btn = document.createElement("button");
+            btn.type = "button";
+            btn.className = "btn btn-secondary";
+            btn.textContent = row.status && row.status !== "new" ? "Re-run" : "Enrich";
+            btn.addEventListener("click", function () {
+              enrichLead(row.id, row, statusCell, btn);
+            });
+            actionCell.appendChild(btn);
+            tr.appendChild(actionCell);
+
             bodyEl.appendChild(tr);
           });
           tableEl.hidden = false;
