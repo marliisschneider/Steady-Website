@@ -1,9 +1,12 @@
 import os
+import re
+from pathlib import Path
 
 from dotenv import load_dotenv
 
 load_dotenv()
 
+from anthropic import Anthropic
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
@@ -27,6 +30,63 @@ app.add_middleware(
 )
 
 
+# ---- Ask Steady: a grounded Q&A assistant over the Learn library ----------
+# Reads the site's own guides at startup and answers questions using ONLY that
+# content, in Steady's voice, with health guardrails. Lean by design — needs
+# only the Anthropic key (already set for this service).
+ASK_MODEL = "claude-sonnet-4-5-20250929"
+
+anthropic_client = Anthropic(api_key=os.environ["ANTHROPIC_API_KEY"])
+
+
+def _strip_html(html: str) -> str:
+    html = re.sub(r"<script.*?</script>", " ", html, flags=re.S | re.I)
+    html = re.sub(r"<style.*?</style>", " ", html, flags=re.S | re.I)
+    m = re.search(r"<article.*?>(.*?)</article>", html, flags=re.S | re.I)
+    body = m.group(1) if m else html
+    text = re.sub(r"<[^>]+>", " ", body)
+    return re.sub(r"\s+", " ", text).strip()
+
+
+def _load_library() -> str:
+    base = Path(__file__).resolve().parent
+    parts = []
+    for f in sorted(base.glob("learn-*.html")):
+        html = f.read_text(encoding="utf-8", errors="ignore")
+        tm = re.search(r"<title>(.*?)</title>", html, flags=re.S | re.I)
+        title = (tm.group(1).strip() if tm else f.stem).replace(" — Steady", "")
+        text = _strip_html(html)
+        if text:
+            parts.append(f"### {title}\n{text}")
+    return "\n\n".join(parts)
+
+
+LIBRARY = _load_library()
+
+ASK_SYSTEM_PROMPT = (
+    "You are Steady — a warm, honest nutrition educator. Answer the reader's "
+    "question using ONLY the Steady library below plus well-established, "
+    "non-controversial nutrition basics. Steady's voice is calm, direct, and "
+    "plain: no hype, no fear-mongering, no fad diets.\n\n"
+    "Rules:\n"
+    "- Keep it SHORT and conversational: about 2 to 4 sentences, plain text, like a "
+    "knowledgeable friend texting back. NO markdown, NO headings, NO bullet lists, NO "
+    "bold — just plain sentences.\n"
+    "- Lead with the direct answer, then a sentence of why or how.\n"
+    "- Ground every answer in the library. When a specific guide is relevant, name it "
+    "in plain words (e.g., \"the Protein guide covers this\") so they know where to read "
+    "more. NEVER write a URL or link — you do not know the site's web addresses, so do "
+    "not invent one.\n"
+    "- You are NOT a doctor. Never diagnose, never give medical advice, never name "
+    "medications or doses. For anything severe, persistent, or a red-flag symptom, tell "
+    "them to see a doctor.\n"
+    "- If a question is outside nutrition, or the library doesn't cover it, say so "
+    "honestly and suggest the symptom quiz or booking a free call — don't invent an answer.\n"
+    "- Never invent studies, numbers, or statistics.\n\n"
+    "=== STEADY LIBRARY ===\n" + LIBRARY
+)
+
+
 class LeadInput(BaseModel):
     name: str
     email: str
@@ -34,9 +94,46 @@ class LeadInput(BaseModel):
     message: str | None = None
 
 
+class AskInput(BaseModel):
+    question: str
+
+
+def _sanitize_answer(text: str) -> str:
+    """Belt-and-suspenders: the model sometimes invents URLs and over-formats
+    despite the prompt. Strip any links/URLs (it doesn't know real ones) and
+    flatten markdown so the chat widget gets clean plain text."""
+    text = re.sub(r"\[([^\]]+)\]\([^)]*\)", r"\1", text)      # [label](url) -> label
+    text = re.sub(r"https?://\S+", "", text)                  # bare URLs
+    text = re.sub(r"^#{1,6}\s*", "", text, flags=re.M)        # markdown headers
+    text = re.sub(r"\*\*([^*]+)\*\*", r"\1", text)            # bold
+    text = re.sub(r"(?<!\*)\*(?!\*)([^*\n]+)\*(?!\*)", r"\1", text)  # italics
+    text = re.sub(r"^\s*[-•]\s+", "", text, flags=re.M)       # bullet markers
+    text = re.sub(r"[ \t]*📖[^\n]*", "", text)                # stray CTA emoji lines
+    text = re.sub(r"[ \t]{2,}", " ", text)                    # collapse double spaces
+    text = re.sub(r"\n{3,}", "\n\n", text)                    # collapse blank runs
+    return text.strip()
+
+
 @app.get("/")
 def health():
-    return {"status": "ok", "endpoint": "/research", "method": "POST"}
+    return {"status": "ok", "endpoints": ["/research", "/ask", "/demo"]}
+
+
+@app.post("/ask")
+def ask(input: AskInput):
+    question = (input.question or "").strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Please ask a question.")
+    question = question[:500]
+    message = anthropic_client.messages.create(
+        model=ASK_MODEL,
+        max_tokens=500,
+        # Cache the big library prefix so repeat questions are ~cheap.
+        system=[{"type": "text", "text": ASK_SYSTEM_PROMPT, "cache_control": {"type": "ephemeral"}}],
+        messages=[{"role": "user", "content": question}],
+    )
+    answer = "".join(b.text for b in message.content if b.type == "text").strip()
+    return {"answer": _sanitize_answer(answer)}
 
 
 @app.post("/research")
